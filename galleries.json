@@ -1,0 +1,18 @@
+{
+  "gallery.html": {
+    "title": "Edinburgh & London 2026",
+    "images": 54,
+    "sections": [
+      "Architecture",
+      "Stained Glass",
+      "Things",
+      "Nature",
+      "Cones",
+      "Kirkyard"
+    ],
+    "updated": "2026-09-06",
+    "cover": "media/arch/bank.jpg",
+    "cover_width": 1756,
+    "cover_height": 1756
+  }
+}

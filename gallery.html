@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edinburgh &amp; London 2026</title>
+<style>
+:root {
+  --gap: 0.3rem;
+  --pad: 0.3rem;
+  --sb: 16px;  /* scrollbar allowance; only nudges row height, never packing */
+  /* Placeholder behind every not-yet-loaded photo. Grid spans size the tiles
+     independently of the images, so the full layout is drawn in this colour
+     before a single byte of image data arrives. Kept near the page black so a
+     half-loaded grid doesn't read as a checkerboard. */
+  --tile: #1a1a1e;
+  color-scheme: light dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: var(--pad);
+  background: #111;
+  color: #eee;
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+header { padding: 0.75rem 0.4rem 1.25rem; }
+.Backlink {
+  display: inline-block;
+  margin-bottom: 0.6rem;
+  color: #8b8b96;
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.Backlink:hover, .Backlink:focus-visible { color: #ededf2; }
+.Backlink span { margin-right: 0.15rem; }
+h1 { margin: 0 0 0.25rem; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.01em; }
+header p { margin: 0; color: #8b8b8b; font-size: 0.8rem; }
+
+.gridContainer {
+  display: grid;
+  /* Square cells: row height tracks the computed column width. */
+  grid-auto-rows: calc(
+    (100vw - var(--sb) - 2 * var(--pad) - (var(--n) - 1) * var(--gap)) / var(--n)
+  );
+  grid-auto-flow: dense;
+  grid-gap: var(--gap);
+}
+
+.Image { margin: 0; overflow: hidden; background: var(--tile); border-radius: 2px; }
+.Image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.s-3-3 { grid-column-end: span 3; grid-row-end: span 3; }
+.s-3-4 { grid-column-end: span 3; grid-row-end: span 4; }
+.s-3-5 { grid-column-end: span 3; grid-row-end: span 5; }
+.s-4-3 { grid-column-end: span 4; grid-row-end: span 3; }
+.s-5-3 { grid-column-end: span 5; grid-row-end: span 3; }
+
+:root { --n: 12; }
+.gridContainer { grid-template-columns: repeat(12, 1fr); }
+@media (max-width: 1079px) {
+  :root { --n: 9; }
+  .gridContainer { grid-template-columns: repeat(9, 1fr); }
+}
+@media (max-width: 719px) {
+  :root { --n: 6; }
+  .gridContainer { grid-template-columns: repeat(6, 1fr); }
+  .s-4-3 { grid-column-end: span 3; grid-row-end: span 2; }
+  .s-5-3 { grid-column-end: span 6; grid-row-end: span 4; }
+}
+
+.Section + .Section { margin-top: 2rem; }
+.Footer {
+  max-width: 70rem;
+  margin: 3rem 0 0;
+  padding: 1.4rem 0.4rem 0.6rem;
+  border-top: 1px solid #22222a;
+  color: #6e6e7a;
+  font-size: 0.78rem;
+  line-height: 1.7;
+}
+.Footer-terms { display: block; color: #55555f; }
+
+.Section-body { margin: 0; }
+.Section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #9a9aa6;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;              /* Firefox default marker */
+}
+.Section-title::-webkit-details-marker { display: none; }
+.Section-title:hover { color: #c8c8d2; }
+.Section-title:focus-visible { outline: 2px solid #7aa2f7; outline-offset: 2px; }
+.Section-title::before {
+  content: "";
+  flex: none;
+  width: 0.36rem;
+  height: 0.36rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);     /* collapsed: points right */
+  transition: transform 0.18s ease;
+}
+.Section-body[open] > .Section-title::before {
+  transform: rotate(45deg);      /* expanded: points down */
+}
+@media (prefers-reduced-motion: reduce) {
+  .Section-title::before { transition: none; }
+}
+.Section-count {
+  margin-left: 0.5rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: #61616c;
+}
+
+.Image { cursor: pointer; }
+.Image:focus-visible { outline: 2px solid #7aa2f7; outline-offset: 2px; }
+/* Reserve the gutter so locking scroll can't shift the grid mid-transition. */
+html { scrollbar-gutter: stable; }
+body.is-locked { overflow: hidden; }
+
+.Lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 4vw, 3rem);
+}
+.Lightbox[hidden] { display: none; }
+
+/* Only this fades. The photo itself stays fully opaque the whole way, so it
+   never dips toward the backdrop colour mid-flight. */
+.Lightbox-veil {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 8, 10, 0.95);
+}
+
+.Lightbox-close {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.95rem;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  opacity: 0.35;
+  cursor: pointer;
+  transition: opacity 0.2s, background 0.2s;
+}
+.Lightbox-close:hover,
+.Lightbox-close:focus-visible { opacity: 0.95; background: rgba(255,255,255,0.1); }
+
+/* Two nested transforms, kept apart: the wrapper flies between the tile and
+   the centre (FLIP), the card owns the flip. It also holds the perspective,
+   since that only applies to a direct child. */
+.CardWrap {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  max-height: 100%;
+  perspective: 1800px;
+  will-change: transform;
+}
+/* Clip only while flying, so the crop morph works without the flip having to
+   live inside an overflow container at rest. */
+.CardWrap.is-flying { overflow: hidden; }
+.Card {
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.Card.is-flipped { transform: rotateY(180deg); }
+/* While closing, un-flip at the closing speed so both land together. */
+.Card.is-closing { transition-duration: 300ms; }
+
+.Face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.Face--front img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(92vw, 1500px);
+  max-height: 84vh;
+  background: var(--tile);
+  border-radius: 3px;
+}
+.Face--back {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: clamp(1.1rem, 4vw, 2.75rem);
+  overflow: auto;
+  transform: rotateY(180deg);
+  background: #e7e7ea;
+  border: 1px solid #cfcfd5;
+  border-radius: 3px;
+}
+.Back-kind {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5f5f6b;
+}
+.Back-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #1a1a1f;
+}
+.Back-text {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 0.98rem;
+  line-height: 1.75;
+  color: #303038;
+  white-space: pre-wrap;
+}
+.Back-text.is-empty { color: #63636f; font-style: italic; }
+.Back-text a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: #000;
+  text-underline-offset: 2px;
+}
+.Back-text a:hover { text-decoration-thickness: 2px; }
+.Back-text a:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .Card { transition: none; }
+}
+
+</style>
+</head>
+<body>
+<header>
+  <a class="Backlink" href="index.html"><span aria-hidden="true">←</span> Galleries</a>
+  <h1>Edinburgh &amp; London 2026</h1>
+  <p>54 photos in 6 categories</p>
+</header>
+<main class="Gallery">
+  <section class="Section Section--favorites" aria-labelledby="sec-favorites">
+    <details class="Section-body" open>
+    <summary class="Section-title" id="sec-favorites">Favorites<span class="Section-count">7</span></summary>
+    <div class="gridContainer">
+      <figure class="Image Image--arch s-3-3" data-type="arch" data-name="bank" tabindex="0" role="button">
+        <img src="media/arch/bank.jpg" alt="Methodist Central Hall" width="1756" height="1756" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--elem s-3-3" data-type="elem" data-name="castle" tabindex="0" role="button">
+        <img src="media/elem/castle.jpg" alt="Edinburgh Coat of Arms" width="870" height="870" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--arch s-3-4" data-type="arch" data-name="westminster" tabindex="0" role="button">
+        <img src="media/arch/westminster.jpg" alt="Westminster Abbey North Door" width="1536" height="2046" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--glass s-3-3" data-type="glass" data-name="zealot" tabindex="0" role="button">
+        <img src="media/glass/zealot.jpg" alt="Guardian of Scotland" width="884" height="884" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--nature s-3-3" data-type="nature" data-name="lily" tabindex="0" role="button">
+        <img src="media/nature/lily.jpg" alt="Water Lily" width="886" height="886" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--cone s-3-4" data-type="cone" data-name="hume1beer" tabindex="0" role="button">
+        <img src="media/cone/hume1beer.jpg" alt="David Hume [1]" width="3088" height="4112" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--elem s-4-3" data-type="elem" data-name="unicorn" tabindex="0" role="button">
+        <img src="media/elem/unicorn.jpg" alt="Unicorn Relief at the King&#x27;s Gallery" width="1974" height="1482" loading="lazy" decoding="async">
+      </figure>
+    </div>
+    </details>
+  </section>
+  <section class="Section Section--arch" aria-labelledby="sec-arch">
+    <details class="Section-body" open>
+    <summary class="Section-title" id="sec-arch">Architecture<span class="Section-count">9</span></summary>
+    <div class="gridContainer">
+      <figure class="Image Image--arch s-4-3" data-type="arch" data-name="clockcompound" tabindex="0" role="button">
+        <img src="media/arch/clockcompound.jpg" alt="Well Court [1]" width="4112" height="3088" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--arch s-5-3" data-type="arch" data-name="courtyard" tabindex="0" role="button">
+        <img src="media/arch/courtyard.jpg" alt="Westminster Abbey Courtyard" width="2242" height="1261" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--arch s-3-5" data-type="arch" data-name="clocktower" tabindex="0" role="button">
+        <img src="media/arch/clocktower.jpg" alt="Well Court, Dean Village [2]" width="655" height="1164" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--arch s-3-4" data-type="arch" data-name="nook" tabindex="0" role="button">
+        <img src="media/arch/nook.jpg" alt="Shell Grotto" width="3088" height="4112" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--arch s-3-4" data-type="arch" data-name="westminster" tabindex="0" role="button">
+        <img src="media/arch/westminster.jpg" alt="Westminster Abbey North Door" width="1536" height="2046" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--arch s-3-4" data-type="arch" data-name="crumble" tabindex="0" role="button">
+        <img src="media/arch/crumble.jpg" alt="St Anthony&#x27;s Chapel" width="1536" height="2046" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--arch s-3-5" data-type="arch" data-name="power" tabindex="0" role="button">
+        <img src="media/arch/power.jpg" alt="Battersea Power Station" width="1330" height="2364" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--arch s-3-3" data-type="arch" data-name="bank" tabindex="0" role="button">
+        <img src="media/arch/bank.jpg" alt="Methodist Central Hall" width="1756" height="1756" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--arch s-4-3" data-type="arch" data-name="wes" tabindex="0" role="button">
+        <img src="media/arch/wes.jpg" alt="The Botanic Cottage" width="3995" height="3000" loading="lazy" decoding="async">
+      </figure>
+    </div>
+    </details>
+  </section>
+  <section class="Section Section--glass" aria-labelledby="sec-glass">
+    <details class="Section-body" open>
+    <summary class="Section-title" id="sec-glass">Stained Glass<span class="Section-count">7</span></summary>
+    <div class="gridContainer">
+      <figure class="Image Image--glass s-3-4" data-type="glass" data-name="apostles" tabindex="0" role="button">
+        <img src="media/glass/apostles.jpg" alt="The Holy Ghost" width="1465" height="1951" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--glass s-3-4" data-type="glass" data-name="flood" tabindex="0" role="button">
+        <img src="media/glass/flood.jpg" alt="The Flood" width="1533" height="2042" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--glass s-3-4" data-type="glass" data-name="mixed" tabindex="0" role="button">
+        <img src="media/glass/mixed.jpg" alt="The Battle of Britain Memorial Window" width="1536" height="2046" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--glass s-3-5" data-type="glass" data-name="renala" tabindex="0" role="button">
+        <img src="media/glass/renala.jpg" alt="Sir Charles and Sir John Wolfe Barry" width="1310" height="2329" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--glass s-3-3" data-type="glass" data-name="demure" tabindex="0" role="button">
+        <img src="media/glass/demure.jpg" alt="Stained Glass" width="1752" height="1752" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--glass s-3-4" data-type="glass" data-name="strategem" tabindex="0" role="button">
+        <img src="media/glass/strategem.jpg" alt="Major-General Andrew Gilbert Wauchope" width="1521" height="2026" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--glass s-3-3" data-type="glass" data-name="zealot" tabindex="0" role="button">
+        <img src="media/glass/zealot.jpg" alt="Guardian of Scotland" width="884" height="884" loading="lazy" decoding="async">
+      </figure>
+    </div>
+    </details>
+  </section>
+  <section class="Section Section--elem" aria-labelledby="sec-elem">
+    <details class="Section-body" open>
+    <summary class="Section-title" id="sec-elem">Things<span class="Section-count">12</span></summary>
+    <div class="gridContainer">
+      <figure class="Image Image--elem s-3-3" data-type="elem" data-name="cannons" tabindex="0" role="button">
+        <img src="media/elem/cannons.jpg" alt="Tower of London Battlement Sign" width="1772" height="1772" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--elem s-3-3" data-type="elem" data-name="castle" tabindex="0" role="button">
+        <img src="media/elem/castle.jpg" alt="Edinburgh Coat of Arms" width="870" height="870" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--elem s-3-3" data-type="elem" data-name="crest" tabindex="0" role="button">
+        <img src="media/elem/crest.jpg" alt="Scottish Achievement" width="878" height="878" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--elem s-3-3" data-type="elem" data-name="swords" tabindex="0" role="button">
+        <img src="media/elem/swords.jpg" alt="Fence [2]" width="886" height="886" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--elem s-3-3" data-type="elem" data-name="dog" tabindex="0" role="button">
+        <img src="media/elem/dog.jpg" alt="Bronze 24-Pounder Cannon Maltese Quoin" width="1772" height="1772" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--elem s-3-3" data-type="elem" data-name="dragon" tabindex="0" role="button">
+        <img src="media/elem/dragon.jpg" alt="Westminster Abbey Dragon" width="1772" height="1772" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--elem s-3-3" data-type="elem" data-name="fence" tabindex="0" role="button">
+        <img src="media/elem/fence.jpg" alt="Fence [1]" width="1756" height="1756" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--elem s-3-3" data-type="elem" data-name="grate" tabindex="0" role="button">
+        <img src="media/elem/grate.jpg" alt="Bloody Mackenzie&#x27;s Mausoleum" width="1752" height="1752" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--elem s-3-4" data-type="elem" data-name="pulpit" tabindex="0" role="button">
+        <img src="media/elem/pulpit.jpg" alt="Preaching Tent" width="1536" height="2046" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--elem s-3-3" data-type="elem" data-name="crunch" tabindex="0" role="button">
+        <img src="media/elem/crunch.jpg" alt="Bronze 24-Pounder Cannon Heraldry" width="1758" height="1758" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--elem s-3-3" data-type="elem" data-name="wheel" tabindex="0" role="button">
+        <img src="media/elem/wheel.jpg" alt="Bronze 24-Pounder Cannon Wheel" width="1772" height="1772" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--elem s-4-3" data-type="elem" data-name="unicorn" tabindex="0" role="button">
+        <img src="media/elem/unicorn.jpg" alt="Unicorn Relief at the King&#x27;s Gallery" width="1974" height="1482" loading="lazy" decoding="async">
+      </figure>
+    </div>
+    </details>
+  </section>
+  <section class="Section Section--nature" aria-labelledby="sec-nature">
+    <details class="Section-body" open>
+    <summary class="Section-title" id="sec-nature">Nature<span class="Section-count">8</span></summary>
+    <div class="gridContainer">
+      <figure class="Image Image--nature s-4-3" data-type="nature" data-name="bee" tabindex="0" role="button">
+        <img src="media/nature/bee.jpg" alt="Cardoon" width="4112" height="3088" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--nature s-4-3" data-type="nature" data-name="bird" tabindex="0" role="button">
+        <img src="media/nature/bird.jpg" alt="Arthur&#x27;s Roost" width="2046" height="1536" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--nature s-4-3" data-type="nature" data-name="buttercup" tabindex="0" role="button">
+        <img src="media/nature/buttercup.jpg" alt="St. John&#x27;s Wort" width="4112" height="3088" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--nature s-4-3" data-type="nature" data-name="pinky" tabindex="0" role="button">
+        <img src="media/nature/pinky.jpg" alt="Codlins &amp; Cream" width="2046" height="1536" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--nature s-3-4" data-type="nature" data-name="fairies" tabindex="0" role="button">
+        <img src="media/nature/fairies.jpg" alt="Mystic Water" width="3088" height="4112" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--nature s-3-3" data-type="nature" data-name="bench" tabindex="0" role="button">
+        <img src="media/nature/bench.jpg" alt="Bench" width="886" height="886" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--nature s-3-3" data-type="nature" data-name="lily" tabindex="0" role="button">
+        <img src="media/nature/lily.jpg" alt="Water Lily" width="886" height="886" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--nature s-4-3" data-type="nature" data-name="yellowflowers" tabindex="0" role="button">
+        <img src="media/nature/yellowflowers.jpg" alt="Ragwort" width="2046" height="1536" loading="lazy" decoding="async">
+      </figure>
+    </div>
+    </details>
+  </section>
+  <section class="Section Section--cone" aria-labelledby="sec-cone">
+    <details class="Section-body" open>
+    <summary class="Section-title" id="sec-cone">Cones<span class="Section-count">9</span></summary>
+    <div class="gridContainer">
+      <figure class="Image Image--cone s-3-4" data-type="cone" data-name="disappointment" tabindex="0" role="button">
+        <img src="media/cone/disappointment.jpg" alt="Historia and Eloquence" width="1536" height="2046" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--cone s-3-4" data-type="cone" data-name="horseman" tabindex="0" role="button">
+        <img src="media/cone/horseman.jpg" alt="The Royal Scots Greys Monument" width="3024" height="4032" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--cone s-3-4" data-type="cone" data-name="hume1beer" tabindex="0" role="button">
+        <img src="media/cone/hume1beer.jpg" alt="David Hume [1]" width="3088" height="4112" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--cone s-3-4" data-type="cone" data-name="hume5beers" tabindex="0" role="button">
+        <img src="media/cone/hume5beers.jpg" alt="David Hume [2]" width="1513" height="2015" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--cone s-3-4" data-type="cone" data-name="kid" tabindex="0" role="button">
+        <img src="media/cone/kid.jpg" alt="Robert Fergusson" width="1536" height="2046" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--cone s-3-4" data-type="cone" data-name="poli" tabindex="0" role="button">
+        <img src="media/cone/poli.jpg" alt="Adam Smith" width="1477" height="1968" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--cone s-3-4" data-type="cone" data-name="saint" tabindex="0" role="button">
+        <img src="media/cone/saint.jpg" alt="Sir Walter Scott" width="3024" height="4032" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--cone s-3-4" data-type="cone" data-name="seated" tabindex="0" role="button">
+        <img src="media/cone/seated.jpg" alt="James Clerk Maxwell" width="1536" height="2046" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--cone s-3-4" data-type="cone" data-name="swag" tabindex="0" role="button">
+        <img src="media/cone/swag.jpg" alt="James Braidwood" width="1496" height="1993" loading="lazy" decoding="async">
+      </figure>
+    </div>
+    </details>
+  </section>
+  <section class="Section Section--kirk" aria-labelledby="sec-kirk">
+    <details class="Section-body" open>
+    <summary class="Section-title" id="sec-kirk">Kirkyard<span class="Section-count">9</span></summary>
+    <div class="gridContainer">
+      <figure class="Image Image--kirk s-3-4" data-type="kirk" data-name="hut" tabindex="0" role="button">
+        <img src="media/kirk/hut.jpg" alt="St. George&#x27;s Well" width="3011" height="4010" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--kirk s-4-3" data-type="kirk" data-name="headless" tabindex="0" role="button">
+        <img src="media/kirk/headless.jpg" alt="This I&#x27;ll Defend" width="2003" height="1504" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--kirk s-3-4" data-type="kirk" data-name="2" tabindex="0" role="button">
+        <img src="media/kirk/2.jpg" alt="Borthwick Monument" width="1513" height="2015" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--kirk s-3-4" data-type="kirk" data-name="spooy" tabindex="0" role="button">
+        <img src="media/kirk/spooy.jpg" alt="The Foulis Memorial" width="1524" height="2030" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--kirk s-3-3" data-type="kirk" data-name="ded" tabindex="0" role="button">
+        <img src="media/kirk/ded.jpg" alt="Momento Mori Stone" width="1536" height="1536" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--kirk s-4-3" data-type="kirk" data-name="grave" tabindex="0" role="button">
+        <img src="media/kirk/grave.jpg" alt="George Heriot Monument" width="2033" height="1526" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--kirk s-4-3" data-type="kirk" data-name="1" tabindex="0" role="button">
+        <img src="media/kirk/1.jpg" alt="James Harlay Monument" width="2142" height="1432" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--kirk s-3-3" data-type="kirk" data-name="heads" tabindex="0" role="button">
+        <img src="media/kirk/heads.jpg" alt="John Mylne III Memorial" width="1750" height="1750" loading="lazy" decoding="async">
+      </figure>
+      <figure class="Image Image--kirk s-4-3" data-type="kirk" data-name="booba" tabindex="0" role="button">
+        <img src="media/kirk/booba.jpg" alt="Displaced Finial" width="2046" height="1536" loading="lazy" decoding="async">
+      </figure>
+    </div>
+    </details>
+  </section>
+</main>
+<footer class="Footer">
+  © 2026 Trey Hakanson. All rights reserved.
+  <span class="Footer-terms">Personal viewing only — no commercial use or redistribution without permission.</span>
+</footer>
+
+<div class="Lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo" hidden>
+  <div class="Lightbox-veil"></div>
+  <button class="Lightbox-close" type="button" aria-label="Close">
+    <svg width="17" height="17" viewBox="0 0 17 17" fill="none" aria-hidden="true">
+      <path d="M2 2 L15 15 M15 2 L2 15" stroke="currentColor"
+            stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+  </button>
+  <div class="CardWrap">
+    <div class="Card">
+      <div class="Face Face--front"><img src="" alt=""></div>
+      <div class="Face Face--back">
+        <span class="Back-kind"></span>
+        <h2 class="Back-title"></h2>
+        <p class="Back-text"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="application/json" id="captions-data">{"arch": {"bank": {"title": "Methodist Central Hall", "caption": "Positioned directly across the street from Westminster Abbey, there's a touch of irony here. I originally didn't like this shot much, but it came out nice after some edits to bring out the texture of the building and the color of the sky.", "favorite": true}, "clockcompound": {"title": "Well Court [1]", "caption": "In Dean Village, along the Water of Leith Walkway."}, "clocktower": {"title": "Well Court, Dean Village [2]", "caption": "Still in Dean Village, and still along the Water of Leith Walkway."}, "courtyard": {"title": "Westminster Abbey Courtyard", "caption": "Westminster Abbey's main cloister and courtyard."}, "crumble": {"title": "St Anthony's Chapel", "caption": "Found on a side-path about a quarter of the way up the hike to the top of Arthur's Seat."}, "nook": {"title": "Shell Grotto", "caption": "Found at the Queen Mother’s Memorial Garden in the Royal Botanic Garden in Edinburgh. Felt like something you'd find on your Tumblr feed circa 2009."}, "power": {"title": "Battersea Power Station", "caption": "The hotel I stayed at in London was right across the street. I wouldn't recommend the hotel, but I would recommend stopping by the power station if you like architecture. Not really worth going inside since its a pretty standard mall these days, though."}, "wes": {"title": "The Botanic Cottage", "caption": "A quaint cottage found in the Royal Botanic Garden in Edinburgh. I didn't get the shot quite right, needing to take it lower; but, you live and you learn."}, "westminster": {"title": "Westminster Abbey North Door", "caption": "The tourist entrance to Westminster Abbey. The main one is reserved for folks coming to a service.", "favorite": true}}, "cone": {"disappointment": {"title": "Historia and Eloquence", "caption": "The overall monument is to William Ewart Gladstone, a prominent Scottish statesmen. Surrounding the state are virtues, 2 of which are pictured here. As far as I could tell, Eloquence is the one with the cone over their head. If whoever placed it knew that, I hope they recognize their comedic genius."}, "horseman": {"title": "The Royal Scots Greys Monument", "caption": "A memorial to the Royal Scots Greys cavalry regiment, commemorating those who fought and died in the Second Boer War and other conflicts."}, "hume1beer": {"title": "David Hume [1]", "caption": "[David Hume](https://davidhumeinstitute.org/the-legacy-project/whoisdavidhume) after 1 beer.", "favorite": true}, "hume5beers": {"title": "David Hume [2]", "caption": "[David Hume](https://davidhumeinstitute.org/the-legacy-project/whoisdavidhume) after 5 beers."}, "kid": {"title": "Robert Fergusson", "caption": "A prominent Scottish poet in the era of the Scottish Enlightenment. An excerpt from one of his most famous works on material vs. intellectual wealth, [Braid Claith](https://www.scottishpoetrylibrary.org.uk/poem/braid-claith/):\n\nYe wha are fain to hae your name\n    Wrote in the bonny book of fame,\n    Let merit nae pretension claim\n        To laurel'd wreath,\n    But hap ye weel, baith back and wame,\n        In gude Braid Claith."}, "poli": {"title": "Adam Smith", "caption": "Statue to Adam Smith, a Scottish economist, philosopher, and the author of Wealth of Nations. I was surprised by the number of notable Scottish philosophers, and Edinburgh seemed to take significant pride in their country's intellectual history. Edinburgh is sometimes referred to as \"the Athens of the North\" because of this, and even tried to build their own full-scale replica of the Parthenon as a national monument. If you've ever seen it, you'll know to put emphasis on \"tried\"."}, "saint": {"title": "Sir Walter Scott", "caption": "Sir Walter Scott, a Scottish author, is the subject of the Scott Monument in Edinburgh."}, "seated": {"title": "James Clerk Maxwell", "caption": "One of history's most influential physicists. I hear he had an [(electro)magnetic](https://en.wikipedia.org/wiki/A_Dynamical_Theory_of_the_Electromagnetic_Field) personality."}, "swag": {"title": "James Braidwood", "caption": "Allegedly, James Braidwood was the creator of the world's first municipal Fire Department."}}, "elem": {"cannons": {"title": "Tower of London Battlement Sign", "caption": "Taken near the entrance of a tower along the battlements surrounding the property."}, "castle": {"title": "Edinburgh Coat of Arms", "caption": "I believe this is the Edinburgh Coat of Arms, engraved on an old police box. None of the police boxes in Edinburgh are actually in use by the force these days, with most being leased to micro cafes and such. This one had seen better days, and didn't seem to see any use.", "favorite": true}, "crest": {"title": "Scottish Achievement", "caption": "Scottish coat of arms with heraldic achievement, at Castle Edinburgh."}, "crunch": {"title": "Bronze 24-Pounder Cannon Heraldry", "caption": "Likely a depiction of Satan, being consumed by 2 dragons. Ouch."}, "dog": {"title": "Bronze 24-Pounder Cannon Maltese Quoin", "caption": "The quoin used to support the barrel of this cannon is in the shape of a Maltese dog, a nod to its commissioners: the Order of St John (otherwise known as the Order of Malta)."}, "dragon": {"title": "Westminster Abbey Dragon", "caption": "Likely depicts the dragon St. George is fabled to have slain."}, "fence": {"title": "Fence [1]", "caption": "Note much to say here, but I liked the ironwork."}, "grate": {"title": "Bloody Mackenzie's Mausoleum", "caption": "I didn't know what I was photographing until later, but this is a grate on the doors to one of the most famous graves in Greyfriar's Kirkyard: [Bloody Mackenzie's](https://en.wikipedia.org/wiki/George_Mackenzie_of_Rosehaugh) Mausoleum. He was a Scottish lawyer and prominent figure of the [Covenanters](https://en.wikipedia.org/wiki/Covenanters) that earned the name by being one of the its ruthless prosecutors."}, "pulpit": {"title": "Preaching Tent", "caption": "A preaching tent at the National Museum of Scotland. I liked the way the lighting was setup in the exhibit, and the texture of the wood. Outdoor services were particular popular in Scotland following the [Disruption of 1843](https://en.wikipedia.org/wiki/Disruption_of_1843), where ministers across the country broke away from the Church of Scotland. The Scots certainly were (are?) quite a cantankerous bunch."}, "swords": {"title": "Fence [2]", "caption": "Another fence with some nice ironwork, this one featuring some sort of stylized fleur-de-lis points."}, "unicorn": {"title": "Unicorn Relief at the King's Gallery", "caption": "Found on the door to the King's Gallery at the Palace of Holyroodhouse. Positioned across from the British Lion, the much less interesting National mascot of the UK countries.", "favorite": true}, "wheel": {"title": "Bronze 24-Pounder Cannon Wheel", "caption": "Surely the cost of these wheels would have made even [Tim Cook blush](https://www.youtube.com/watch?v=mBHY_Qaw5AI)."}}, "glass": {"apostles": {"title": "The Holy Ghost", "caption": "Likely a depiction of [Acts 2:4](https://www.biblegateway.com/verse/en/Acts%202%3A4), where a group was filled with the Holy Spirit and began to speak in tongues."}, "demure": {"title": "Stained Glass", "caption": "I don't remember exactly where this was; maybe somewhere in St John's Chapel? Definitely somewhere at the Tower of London."}, "flood": {"title": "The Flood", "caption": "I'm not certain what is being depicted here, but there's definitely a religious figure guiding (or punishing?) a group of sailors. Some of the stained glass in Westminster Abbey is actually [quite modern](https://www.westminster-abbey.org/history/explore-our-history/stained-glass), and I'd guess this falls into that category based on the richness of the cool colors, particularly the deep blues and purples."}, "mixed": {"title": "The Battle of Britain Memorial Window", "caption": "This is a fairly modern (1947) installment in the [RAF Chapel](https://www.westminster-abbey.org/history/explore-our-history/raf-chapel) of Westminster Abbey. Something I found interesting in the UK was that stained glass memorializing those lost in battle, particularly in the World Wars, were fairly common (both in Scotland and England); I had previously only seen religious imagery depicted on holy grounds."}, "renala": {"title": "Sir Charles and Sir John Wolfe Barry", "caption": "There's something odd about seeing a king and a civil engineer enshrined in the [nave](https://www.westminster-abbey.org/abbey-commemorations/commemorations/sir-charles-and-sir-john-wolfe-barry) of Westminster Abbey. Sir John Wolfe Barry designed multiple prominent bridges in the London area, including Blackfriars Bridge."}, "strategem": {"title": "Major-General Andrew Gilbert Wauchope", "caption": "Taken at St Giles' Cathedral in Edinburgh, in memory of a major-general who died in the Battle of Magersfontein in the Second Boer War. One of the more interesting pieces of Scottish history I learned while in Edinburgh is that much of England's military victories were paid for in Scottish blood. Its strange to see a monument to such an unjust conflict in a place like this."}, "zealot": {"title": "Guardian of Scotland", "caption": "This glass is from the oldest building on the Castle Edinburgh grounds: [St Margaret's Chapel](https://www.edinburghcastle.scot/see-and-do/highlights/st-margarets-chapel/). It depicts Sir William Wallace, one of the main leaders during the First War of Scottish Independence.", "favorite": true}}, "kirk": {"1": {"title": "James Harlay Monument", "caption": "This one was tough to trace down, but it appears to be the grave of [James Harlay](https://fogk.org/2025/08/10/the-east-wall/). I can't find much about him, other than that he was \"Keeper of His Majesties Privy Seal\", which sounds... nevermind."}, "2": {"title": "Borthwick Monument", "caption": "The most striking thing to me about the monuments and murals in Greyfriars Kirkyard was that so few seemed to depict religious imagery, instead showing memento mori symbols. Supposedly there are potentially hundreds or thousands of bodies on the grounds despite there being only 750 grave markers; so it makes sense that this would have started to feel like a Godless place at some point. This particular mural was in memory of James Borthwick, a famed surgeon, hence the depiction of various surgical instruments."}, "booba": {"title": "Displaced Finial", "caption": "I believe this is a stone finial that would normally be atop some sort of gate or decorative pillar, but has broken off. The design may be of an acorn, which is representative of the cycle of rebirth."}, "ded": {"title": "Momento Mori Stone", "caption": "This headstone was off to the side, with no notable accompanying plaque or text. Since the kirkyard is thought to contain tens to hundreds of thousands of bodies, I took this as a marker to the less distinguished residents."}, "grave": {"title": "George Heriot Monument", "caption": "Although it can't really be deciphered now, the [inscription once read](https://www.findagrave.com/memorial/85276703/george-heriot):\n\nPassenger, who art wise, hence know whence you are,\nwhat you are, and what you are to be,\nLife, gate of death; Death, gate of life to me,\nSole death of death gives life eternally.\nTherefore, whoever breathe draws from the air,\nWhile live thou may'st, thyself for death prepare."}, "headless": {"title": "This I'll Defend", "caption": "This is the heraldic coat of arms of [Clan Macfarlane](https://en.wikipedia.org/wiki/Clan_MacFarlane), whose motto was \"this I'll defend\". The banner paired with the coat of arms' headless guardians is quite a statement on the inevitability of death and the futility of earthly squabbles."}, "heads": {"title": "John Mylne III Memorial", "caption": "It took some digging, but I believe this is the grave of [John Mylne III](https://www.findagrave.com/memorial/75232661/john-mylne), Master Mason to the Crown of Scotland. I also believe these faces are some variation of [Green Men](https://en.wikipedia.org/wiki/Green_Man), foliaged figures meant to represent rebirth. Their somewhat grotesque appearance is likely also to ward off evil spirits from the burial grounds."}, "hut": {"title": "St. George's Well", "caption": "It's a shame to see something nearly as old as the United States vandalized, but the water from this well's spring is [notoriously foul tasting](https://www.megalithic.co.uk/article.php?sid=15325), so I guess its fitting that the exterior has been made to match."}, "spooy": {"title": "The Foulis Memorial", "caption": "A [monument](https://fogk.org/2025/07/11/the-foulis-memorial/) to the Laird of Ravelston and his wife, constructed by his son George Foulis of Ravelston."}}, "nature": {"bee": {"title": "Cardoon", "caption": "A bee visiting a cardoon ([cynara cardunculus](https://data.rbge.org.uk/search/livingcollection/?eti=Cynara+cardunculus&cfg=livcol.cfg&acc_num=&acc_num_qual=&barcode=))."}, "bench": {"title": "Bench", "caption": "A bench along the Water of Leith Walkway."}, "bird": {"title": "Arthur's Roost", "caption": "A bird seen near the ruins of St Anthony's Chapel on the way to the top of Arthur's Seat."}, "buttercup": {"title": "St. John's Wort", "caption": "At least I'm pretty sure this is some variant of St. John's Wart ([hypericum 'hidcote'](https://data.rbge.org.uk/search/livingcollection/?eti=Hypericum&cfg=livcol.cfg&acc_num=&acc_num_qual=&barcode=)). Its a surprisingly hardy plant, and depending on where it grows it has slightly different characteristics. The petals of these flowers are fairly broad, for example."}, "fairies": {"title": "Mystic Water", "caption": "A water feature at the Royal Botanic Garden in Edinburgh."}, "lily": {"title": "Water Lily", "caption": "A lone water lily in one of the ponds at the Royal Botanic Garden in Edinburgh.", "favorite": true}, "pinky": {"title": "Codlins & Cream", "caption": "Otherwise known as great willowherb ([epilobium hirsutum](https://data.rbge.org.uk/search/livingcollection/?eti=Epilobium+hirsutum&cfg=livcol.cfg&acc_num=&acc_num_qual=&barcode=)), but who'd use that name when \"codlins and cream\" is an option."}, "yellowflowers": {"title": "Ragwort", "caption": "This is some kind of ragwort, which are members of the Daisy family. Possibly redstem ragwort ([senecio achilleifolius](https://data.rbge.org.uk/search/livingcollection/?eti=Senecio&cfg=livcol.cfg&acc_num=&acc_num_qual=&barcode=))? Its tough to tell."}}}</script>
+<script>var CAPTIONS_URL = "captions.json";
+var CATEGORY_LABELS = {"favorites": "Favorites", "arch": "Architecture", "glass": "Stained Glass", "elem": "Things", "nature": "Nature", "cone": "Cones", "kirk": "Kirkyard"};
+(function () {
+  var OPEN_MS = 340;
+  var CLOSE_MS = 300;
+  var REVEAL_MS = 120;  // longest we'll hold a blank overlay waiting on bytes
+  var EASE = 'cubic-bezier(0.2, 0.7, 0.3, 1)';
+
+  var captions = JSON.parse(document.getElementById('captions-data').textContent);
+  var box = document.getElementById('lightbox');
+  var wrap = box.querySelector('.CardWrap');
+  var card = box.querySelector('.Card');
+  var shot = box.querySelector('.Face--front img');
+  var kind = box.querySelector('.Back-kind');
+  var title = box.querySelector('.Back-title');
+  var text = box.querySelector('.Back-text');
+  var closer = box.querySelector('.Lightbox-close');
+  var veil = box.querySelector('.Lightbox-veil');
+  var grid = document.querySelector('.Gallery');
+  var opener = null;
+  var flight = null;   // drives settle(); kept after finishing so open() can cancel
+  var extras = [];     // veil fade + crop morph, cancelled alongside
+
+  // Served over http(s), re-read the JSON so caption edits show on reload
+  // without a rebuild. From file:// the build-time copy above is all we get.
+  if (typeof fetch === 'function' &&
+      (location.protocol === 'http:' || location.protocol === 'https:')) {
+    fetch(CAPTIONS_URL, { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d && typeof d === 'object') captions = d; })
+      .catch(function () {});
+  }
+
+  // Captions support exactly one piece of markdown: [text](url). Nodes are
+  // built with the DOM rather than innerHTML, so caption text can never inject
+  // markup -- the link text and the surrounding prose stay inert strings.
+  var LINK = /\[([^\]\n]+)\]\(([^)\s]+)\)/g;
+  var SCHEME = /^[a-z][a-z0-9+.\-]*:/i;
+  var SAFE = /^(https?|mailto):/i;
+
+  function linkable(href) {
+    // Relative and anchor links carry no scheme and are fine. Anything with a
+    // scheme must be one we trust -- notably not javascript:.
+    return !SCHEME.test(href) || SAFE.test(href);
+  }
+
+  function write(el, raw) {
+    el.textContent = '';
+    var at = 0;
+    var m;
+    LINK.lastIndex = 0;
+    while ((m = LINK.exec(raw)) !== null) {
+      if (!linkable(m[2])) continue;   // leave the source text as written
+      if (m.index > at) {
+        el.appendChild(document.createTextNode(raw.slice(at, m.index)));
+      }
+      var a = document.createElement('a');
+      a.href = m[2];
+      a.textContent = m[1];
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      el.appendChild(a);
+      at = m.index + m[0].length;
+    }
+    if (at < raw.length) el.appendChild(document.createTextNode(raw.slice(at)));
+  }
+
+  function still() {
+    if (typeof wrap.animate !== 'function') return true;
+    return !!(window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  // Swapping src can paint one blank frame before the new bitmap is ready,
+  // which reads as a flash. Wait for it to be decodable first -- but never
+  // block on it: no decode support, or a failed decode, just proceeds.
+  //
+  // decode() waits on the download too, so a tile clicked before it has
+  // finished loading would otherwise hold the overlay invisible for as long
+  // as the transfer takes. Cap that wait: past it we open onto the --tile
+  // placeholder, which is what the tile itself is still showing anyway.
+  function paintable(cb) {
+    if (shot.complete && shot.naturalWidth) { cb(); return; }
+    if (typeof shot.decode === 'function') {
+      var fired = false;
+      var once = function () { if (!fired) { fired = true; cb(); } };
+      shot.decode().then(once, once);
+      setTimeout(once, REVEAL_MS);
+      return;
+    }
+    cb();
+  }
+
+  function stop() {
+    if (flight) { flight.cancel(); flight = null; }
+    for (var i = 0; i < extras.length; i++) extras[i].cancel();
+    extras = [];
+  }
+
+  // Describe the tile as a pair of transforms on the opened photo.
+  //
+  // The wrapper alone would stretch the photo, because the tile is a
+  // cover-crop of it and the two aspect ratios differ. So the wrapper takes
+  // the tile's box (non-uniform, and it clips), while the image counter-scales
+  // to stay undistorted -- net a uniform scale k, overflowing the wrapper by
+  // exactly the amount the tile crops. That is `object-fit: cover` at the
+  // start morphing into the whole photo at the end.
+  function onto(tile) {
+    var a = tile.getBoundingClientRect();
+    var b = shot.getBoundingClientRect();
+    if (!a.width || !a.height || !b.width || !b.height) return null;
+    var sx = a.width / b.width;
+    var sy = a.height / b.height;
+    var k = Math.max(sx, sy);
+    var dx = (a.left + a.width / 2) - (b.left + b.width / 2);
+    var dy = (a.top + a.height / 2) - (b.top + b.height / 2);
+    return {
+      box: { transform: 'translate(' + dx + 'px, ' + dy + 'px) scale(' + sx + ', ' + sy + ')' },
+      img: { transform: 'scale(' + (k / sx) + ', ' + (k / sy) + ')' }
+    };
+  }
+
+  // Mirrors the Python side: "" or a bare string is caption-only shorthand.
+  function entryFor(t, n) {
+    var v = (captions[t] || {})[n];
+    if (typeof v === 'string') return { title: '', caption: v };
+    return (v && typeof v === 'object') ? v : {};
+  }
+
+  function open(fig) {
+    var img = fig.querySelector('img');
+    var t = fig.dataset.type;
+    var n = fig.dataset.name;
+    var data = entryFor(t, n);
+    var note = data.caption || '';
+
+    stop();
+    opener = fig;
+    shot.src = img.currentSrc || img.src;
+    shot.alt = img.alt;
+    // Carry the intrinsic size over so the final rect is measurable before
+    // this copy of the image has decoded.
+    shot.width = img.naturalWidth || img.width;
+    shot.height = img.naturalHeight || img.height;
+    kind.textContent = CATEGORY_LABELS[t] || t;
+    title.textContent = data.title || n;
+    write(text, note || 'No notes yet — add one under "' + t + '" → "'
+      + n + '" in captions.json');
+    text.classList.toggle('is-empty', !note);
+
+    card.classList.remove('is-flipped');
+    card.classList.remove('is-closing');
+    box.hidden = false;
+    document.body.classList.add('is-locked');
+
+    if (still()) { closer.focus(); return; }
+
+    // Laid out (so rects are measurable) but not painted, so nothing shows
+    // until the photo is ready to draw in its opening position.
+    box.style.visibility = 'hidden';
+    paintable(function () {
+      box.style.visibility = '';
+      closer.focus();
+      var from = onto(fig);
+      if (!from) return;
+      fig.style.visibility = 'hidden';  // don't show tile and photo at once
+      wrap.classList.add('is-flying');
+      var timing = { duration: OPEN_MS, easing: EASE };
+      extras = [
+        veil.animate([{ opacity: 0 }, { opacity: 1 }],
+          { duration: OPEN_MS, easing: 'ease-out' }),
+        shot.animate([from.img, { transform: 'none' }], timing)
+      ];
+      flight = wrap.animate([from.box, { transform: 'none' }], timing);
+      flight.onfinish = function () { wrap.classList.remove('is-flying'); };
+    });
+  }
+
+  function settle() {
+    // Keep the flight/fade handles: both fill forwards, so the next open()
+    // must cancel them or the wrapper snaps back to the tile transform.
+    box.hidden = true;
+    box.style.visibility = '';
+    document.body.classList.remove('is-locked');
+    wrap.classList.remove('is-flying');
+    card.classList.remove('is-flipped');
+    card.classList.remove('is-closing');
+    if (opener) {
+      opener.style.visibility = '';
+      opener.focus();
+      opener = null;
+    }
+  }
+
+  function close() {
+    if (box.hidden) return;
+    stop();
+    var to = opener && !still() ? onto(opener) : null;
+    if (!to) { settle(); return; }
+    card.classList.add('is-closing');
+    card.classList.remove('is-flipped');
+    wrap.classList.add('is-flying');
+    var timing = { duration: CLOSE_MS, easing: EASE, fill: 'forwards' };
+    extras = [
+      veil.animate([{ opacity: 1 }, { opacity: 0 }],
+        { duration: CLOSE_MS, easing: 'ease-in', fill: 'forwards' }),
+      shot.animate([{ transform: 'none' }, to.img], timing)
+    ];
+    flight = wrap.animate([{ transform: 'none' }, to.box], timing);
+    flight.onfinish = settle;
+  }
+
+  grid.addEventListener('click', function (e) {
+    var fig = e.target.closest('.Image');
+    if (fig) open(fig);
+  });
+
+  grid.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var fig = e.target.closest('.Image');
+    if (fig) { e.preventDefault(); open(fig); }
+  });
+
+  card.addEventListener('click', function (e) {
+    // A caption link is a click on the card too -- let it navigate without
+    // also flipping the card out from under the reader.
+    if (e.target.closest('a')) return;
+    card.classList.toggle('is-flipped');
+  });
+  closer.addEventListener('click', function (e) { e.stopPropagation(); close(); });
+  box.addEventListener('click', function (e) {
+    if (e.target === box || e.target === veil) close();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !box.hidden) close();
+  });
+}());
+</script>
+</body>
+</html>
