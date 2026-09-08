@@ -1,0 +1,55 @@
+/* Tokens and the handful of rules every page shares. */
+
+:root {
+  --gap: 0.3rem;
+  --pad: 0.3rem;
+  --sb: 16px;  /* scrollbar allowance; only nudges row height, never packing */
+  /* Placeholder behind every not-yet-loaded photo. Grid spans size the tiles
+     independently of the images, so the full layout is drawn in this colour
+     before a single byte of image data arrives. Kept near the page black so a
+     half-loaded grid doesn't read as a checkerboard. */
+  --tile: #1a1a1e;
+  --line: #2a2a31;
+  --ink: #ededf2;
+  --muted: #8b8b96;
+  --accent: #7aa2f7;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+/* Reserve the gutter so locking scroll can't shift the grid mid-transition. */
+html { scrollbar-gutter: stable; }
+
+body {
+  margin: 0;
+  background: #111;
+  color: #eee;
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+body.is-locked { overflow: hidden; }
+
+a { color: inherit; }
+
+.Backlink {
+  display: inline-block;
+  margin-bottom: 0.6rem;
+  color: #8b8b96;
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.Backlink:hover,
+.Backlink:focus-visible { color: #ededf2; }
+.Backlink span { margin-right: 0.15rem; }
+
+.Footer {
+  max-width: 70rem;
+  margin: 3rem 0 0;
+  padding: 1.4rem 0.4rem 0.6rem;
+  border-top: 1px solid #22222a;
+  color: #6e6e7a;
+  font-size: 0.78rem;
+  line-height: 1.7;
+}
+.Footer-terms { display: block; color: #55555f; }

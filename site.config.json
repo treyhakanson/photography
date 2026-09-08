@@ -1,0 +1,29 @@
+{
+  "siteTitle": "Galleries",
+  "base": "/photography/",
+  "copyright": {
+    "holder": "Trey Hakanson",
+    "year": 2026,
+    "terms": "Personal viewing only — no commercial use or redistribution without permission."
+  },
+  "layout": {
+    "area": 12,
+    "minSpan": 2,
+    "maxSpan": 5,
+    "iters": 6000,
+    "seed": 11
+  },
+  "derive": {
+    "maxEdge": 2560,
+    "quality": 82
+  },
+  "galleries": [
+    {
+      "slug": "edinburgh-london-2026",
+      "title": "Edinburgh & London 2026",
+      "raw": "./raw_media/uk-2026",
+      "media": "./media/uk-2026",
+      "config": "./config.json"
+    }
+  ]
+}

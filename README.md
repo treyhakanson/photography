@@ -1,70 +1,56 @@
-# Photo galleries
+# Photography
 
-Static photo galleries generated from folders of images. Two Python scripts read
-a `media/` tree and emit plain HTML — no build step at serve time, no framework,
-no runtime dependencies. The output is a directory of static files you can host
-anywhere.
+A static photo gallery generated from a folder of images and a JSON file of
+captions. TypeScript, React and Vite; no backend, no runtime dependencies
+beyond React itself.
 
-```
-uv run build_gallery.py      # media/ -> gallery.html  (+ registers itself)
-uv run build_index.py        # galleries.json -> index.html
-uv run build_admin.py        # media/ + config.json -> gallery_admin.html
-uv run serve_admin.py        # local server: preview + save from the editor
-```
-
----
-
-## Setup
-
-The project uses [uv](https://docs.astral.sh/uv/). Python 3.12+, one dependency
-(Pillow, for reading image dimensions).
+Deploys to GitHub Pages under `/photography`.
 
 ```sh
-uv sync                      # create .venv and install from uv.lock
-uv run build_gallery.py      # uv resolves the env automatically
+npm install
+npm run dev      # http://localhost:5173/photography/
+npm test         # 81 tests
+npm run build    # -> dist/
 ```
-
-There is no separate activate step — `uv run` handles it. To add a dependency,
-`uv add <package>`; commit the updated `uv.lock`.
 
 ---
 
-## Files
+## Layout of the repo
 
-| Path | Tracked | What it is |
-| --- | --- | --- |
-| `media/` | yes | Source photos. **One folder per category** — the folder name becomes the section. |
-| `config.json` | yes | Section order and labels, plus every photo's title, caption and favorite flag. Hand-edited. |
-| `galleries.json` | yes | Registry of built galleries. Written by `build_gallery.py`, read by `build_index.py`. |
-| `build_gallery.py` | yes | Generates one gallery page. |
-| `build_index.py` | yes | Generates the landing page listing galleries. |
-| `build_admin.py` | yes | Generates the local caption editor. |
-| `serve_admin.py` | yes | Local server. Serves the pages and writes `config.json` for the editor. |
-| `gallery.html` | generated | The gallery. Self-contained: CSS and JS are inlined. |
-| `index.html` | generated | Landing page with a card per gallery. |
-| `gallery_admin.html` | generated | Local caption editor. Not meant to be published. |
-
-Both HTML files are **generated output** — edit the scripts, not the HTML. They
-are committed anyway, because static hosts (GitHub Pages) serve them directly.
+| Path | What it is |
+| --- | --- |
+| `raw_media/<gallery>/` | Full-resolution originals. **Gitignored** — only `npm run downsize` reads them. |
+| `media/<gallery>/` | Web-sized photos derived from `raw_media/`, and committed. Inside each gallery, **one folder per category** — that folder name becomes the section. |
+| `config.json` | Section order, section labels, and every photo's title, caption and favorite flag. Hand-edited, or edited through the caption editor. |
+| `site.config.json` | Which galleries exist, the base path, copyright, and the layout knobs. |
+| `scripts/` | Build-time only: image dimensions, grid packing, manifest generation. |
+| `plugins/` | Vite plugins: serving `media/`, the SPA 404 fallback, the dev write endpoint. |
+| `src/` | The app. |
+| `src/data/` | **Generated**: `manifest.json` and `spans.css`. Committed, but never hand-edited. |
+| `deploy/` | A GitHub Pages workflow, inactive until you copy it into `.github/workflows/`. |
 
 Images are referenced from `media/` by relative path; they are not copied or
-rewritten. Whatever is in `media/` is what gets served.
+rewritten until a production build, which copies them into `dist/media/`.
+`raw_media/` never reaches the site.
 
 ### Adding photos
 
-Drop them in a folder under `media/` and rebuild. A new folder becomes a new
-section; new files get blank caption slots added automatically.
+Drop the originals in a category folder under `raw_media/uk-2026/`, then:
 
 ```sh
-uv run build_gallery.py && uv run build_index.py
+npm run downsize   # raw_media/ -> media/
+npm run manifest   # or just `npm run dev`, which does it first
 ```
+
+A new folder becomes a new section, appended to the end of `config.json`'s
+`sections` array for you to move; new files get blank caption slots.
 
 ---
 
 ## `config.json`
 
-One file holds everything the build reads that isn't an image: what order the
-sections go in, what they are called, and what each photo says.
+Everything the build reads that isn't an image: what order the sections go in,
+what they are called, and what each photo says.
 
 ```jsonc
 {
@@ -83,38 +69,35 @@ carried through edits, so you can park your own notes in it.
 
 ```jsonc
 "sections": [
-  "favorites",                               // shorthand: label is the titleized id
+  "favorites",                                // shorthand: label is the titleized id
   { "id": "arch",  "label": "Architecture" }, // when the folder name isn't the label
-  { "id": "glass", "label": "Stained Glass" },
-  { "id": "kirk",  "label": "Kirkyard" }
+  { "id": "glass", "label": "Stained Glass" }
 ]
 ```
 
-`id` is the folder name under `media/`. A bare string is shorthand for
+`id` is a category folder name under the gallery's media directory. A bare string is shorthand for
 `{"id": "<string>"}`, whose label becomes the title-cased folder name — so
-`"nature"` displays as *Nature* and only categories whose label differs need the
-object form.
+`"nature"` displays as *Nature*, and only categories whose label differs need
+the object form.
 
 The **folder name stays the identity** — it keys `captions` and the
-`Image--<folder>` classes — so renaming a label never touches your caption data.
-Labels appear in the gallery's section headers, on the back of each card, in the
+`Image--<folder>` classes — so renaming a label never touches your caption
+data. Labels appear in section headers, on the back of each card, in the
 editor's group headings, and on the index card.
 
-A category with no entry here is **appended at the end** on the next build, with
-a title-cased default label, ready for you to move. Removing an entry therefore
-sends that section to the bottom rather than hiding it.
+A category with no entry here is **appended at the end** on the next build with
+a title-cased default. Removing an entry sends that section to the bottom
+rather than hiding it.
 
 ### `captions`
 
-Shape is `category -> photo name -> entry`. The category is the folder name; the
-photo name is the filename without extension.
-
-Every field is optional, so an entry can be written three ways:
+Keyed by folder name, then by filename without extension. Every field is
+optional, so an entry can be written three ways:
 
 ```jsonc
 "captions": {
   "arch": {
-    "bank": "",                          // nothing set yet (the default stub)
+    "bank": "",                           // nothing set yet (the default stub)
     "nook": "A window in a shell grotto", // shorthand: a bare string is the caption
     "power": {                            // full form — any subset of the three
       "title": "Battersea",
@@ -133,14 +116,11 @@ Every field is optional, so an entry can be written three ways:
 
 Rules the build follows:
 
-- **New photos get a `""` stub** added automatically, so the file stays a
-  complete index of your library.
-- **Existing entries are never rewritten.** The file is only touched when new
-  stubs or sections need adding, and your chosen form is preserved —
-  `{"favorite": true}` will not be expanded with empty `title`/`caption` keys,
-  and the `sections` array is never resorted.
-- **Deleting a photo leaves its entry behind.** Harmless, but prune by hand if
-  you like.
+- **New photos get a `""` stub**, so the file stays a complete index of your library.
+- **Existing entries are never rewritten.** Your chosen form is preserved —
+  `{"favorite": true}` is not expanded with empty `title`/`caption` keys — and
+  the `sections` array is never resorted.
+- **Deleting a photo leaves its entry behind.** Harmless; prune by hand if you like.
 
 Newlines in a caption are preserved (`white-space: pre-wrap`).
 
@@ -149,9 +129,7 @@ Newlines in a caption are preserved (`white-space: pre-wrap`).
 Captions support one piece of markdown — inline links — and nothing else:
 
 ```jsonc
-"dog": {
-  "caption": "Commissioned by the [Order of St John](https://en.wikipedia.org/wiki/Knights_Hospitaller)."
-}
+"dog": { "caption": "Commissioned by the [Order of St John](https://example.org)." }
 ```
 
 Each becomes an `<a target="_blank" rel="noopener noreferrer">`. `http(s)`,
@@ -159,63 +137,9 @@ Each becomes an `<a target="_blank" rel="noopener noreferrer">`. `http(s)`,
 (`javascript:`, `data:`) is refused and left visible as plain text. Malformed
 syntax is left alone rather than guessed at.
 
-Everything else in a caption stays literal text — the nodes are built with the
-DOM rather than by assigning HTML, so a caption containing `<b>` or `<script>`
-renders those characters instead of markup. Titles do not parse markdown; they
-are plain text.
-
-### Editing in a browser
-
-`gallery_admin.html` is a local editor for the captions — a thumbnail per photo
-with fields for title, caption and favorite, and a **Save** button at the top
-left that overwrites `config.json` in place. Groups appear in section order.
-
-The editor only edits captions. Save is a whole-file write, so `sections` and
-anything else in the file is carried through from the copy it last read off
-disk — reordering sections is a hand edit, not something the editor does.
-
-```sh
-uv run build_admin.py        # rebuild the editor after adding photos
-uv run serve_admin.py        # then open the printed URL
-```
-
-A page cannot write to disk on its own, so Save posts to `serve_admin.py`, which
-does the writing. **The editor must be opened through that server** — it also
-serves the gallery, so it can replace `python -m http.server` entirely.
-
-Opened any other way (plain `http.server`, or a `file://` URL) Save falls back to
-downloading `config.json`, so edits are never stranded in the tab. The same
-happens if the write is rejected; the error is shown in the bar.
-
-Written output uses the three forms described above, with categories and names
-sorted, so it diffs cleanly against what is on disk.
-
-The page reads `config.json` from disk on load, so it reflects hand-edits made
-since it was generated — you do not need to re-run `build_admin.py` after editing
-the JSON, only after adding photos. Because Save rewrites the whole file, it
-re-checks disk first: if the file changed underneath you (say you edited it in an
-editor meanwhile), the first Save is refused with a warning and a second click
-overwrites deliberately.
-
-Edits live in the form until saved — nothing is persisted on reload. Changed rows
-are marked, the button carries an unsaved count, and closing the tab with unsaved
-work prompts first.
-
-Neither the editor nor the server is meant to be published; both are local tools.
-
-**About the write endpoint.** `serve_admin.py` binds to `127.0.0.1` only, so it is
-not reachable from your network, and the only path it will ever write is the
-`--config` file named at startup. Payloads are validated before anything touches
-disk, and the write is atomic (temp file plus rename), so a rejected or
-interrupted save cannot leave a half-written `config.json`.
-
-### Live editing
-
-When the page is served over `http(s)`, it re-fetches `config.json` at load, so
-editing captions or labels and refreshing is enough — no rebuild. Section
-*order* is baked into the markup, so reordering does need a rebuild. Opened as a
-`file://` URL the browser blocks that fetch and the build-time copy is used, so
-there you need to rebuild for any change.
+Everything else in a caption stays literal text — React escapes what it renders,
+so a caption containing `<b>` or `<script>` shows those characters rather than
+markup. Titles do not parse markdown.
 
 > **Note:** macOS Finder comments are *not* a caption source. They live in an
 > extended attribute, not in the image file, and are stripped by git, copies,
@@ -223,102 +147,141 @@ there you need to rebuild for any change.
 
 ---
 
-## `galleries.json`
-
-Written by `build_gallery.py` on each build, keyed by the output href so
-rebuilds update in place. `build_index.py` renders one card per entry.
+## `site.config.json`
 
 ```jsonc
 {
-  "gallery.html": {
-    "title": "Edinburgh & London 2026",
-    "images": 54,
-    "sections": ["Architecture", "Stained Glass", "Things", "Nature", "Cones",
-                 "Kirkyard"],   // display labels, in config.json order
-    "updated": "2026-09-07",
-    "cover": "media/arch/bank.jpg",
-    "cover_width": 1756,
-    "cover_height": 1756
-  }
+  "siteTitle": "Galleries",
+  "base": "/photography/",          // must match the repo name on Pages
+  "copyright": { "holder": "...", "year": 2026, "terms": "..." },
+  "layout": { "area": 12, "minSpan": 2, "maxSpan": 5, "iters": 6000, "seed": 11 },
+  "derive": { "maxEdge": 2560, "quality": 82 },
+  "galleries": [
+    {
+      "slug": "edinburgh-london-2026",   // the URL segment
+      "title": "Edinburgh & London 2026",
+      "raw": "./raw_media/uk-2026",      // originals, gitignored
+      "media": "./media/uk-2026",        // derived, committed
+      "config": "./config.json"
+    }
+  ]
 }
 ```
 
-Paths are relative to `galleries.json` itself; the index rebases them onto
-wherever it is written. The cover is the first favorited photo, or the first
-photo if none are flagged.
+| Field | Effect |
+| --- | --- |
+| `base` | Vite's base and the router's basename. Trailing slash required. |
+| `slug` | The URL segment, and the folder photos are served under (`media/<slug>/`). Independent of where they sit on disk. |
+| `layout.area` | Target grid cells per photo. Lower means smaller tiles. |
+| `layout.minSpan` / `maxSpan` | Clamp on how many columns/rows a photo may span. |
+| `layout.iters` | Packing search budget for sections too large to search exactly. |
+| `layout.seed` | Makes that search deterministic. |
+| `derive.maxEdge` | Cap on a derived photo's longest edge. Photos already smaller are re-encoded but not scaled. |
+| `derive.quality` | JPEG quality for derived photos. |
 
-### A second gallery
+### Adding a second gallery
 
-Point the scripts at another folder and give it its own output and captions. It
-registers itself, and the index picks it up:
+Add an entry with its own `slug`, `raw`, `media` and `config`, then rebuild. It gets
+its own route and a card on the index.
 
-```sh
-uv run build_gallery.py --media media2 --out iceland.html \
-    --config iceland-config.json --title "Iceland 2027"
-uv run build_index.py
-```
+Photos are served under `media/<slug>/`, which is derived from the slug rather
+than the folder on disk — so `media/uk-2026/` is published as
+`media/edinburgh-london-2026/`. Two galleries therefore can't collide even if
+their source folders are named alike.
 
 ---
 
-## Command reference
+## The caption editor
 
-### `build_gallery.py`
+`http://localhost:5173/photography/admin` — a thumbnail per photo with fields
+for title, caption and favorite, and a Save button that overwrites `config.json`
+in place.
 
-| Flag | Default | Purpose |
-| --- | --- | --- |
-| `--media` | `media` | Source folder, scanned recursively. |
-| `--out` | `gallery.html` | Output page. |
-| `--title` | `Edinburgh & London 2026` | `<h1>` and `<title>`. |
-| `--config` | `config.json` | Section order and labels, plus captions. |
-| `--registry` | `galleries.json` | Registry to record this gallery in. |
-| `--no-registry` | off | Build without registering (keeps it off the index). |
-| `--index` | `index.html` | Target of the back link. |
-| `--no-index-link` | off | Omit the back link. |
-| `--area` | `12` | Target grid cells per photo. Lower = smaller tiles. |
-| `--min-span` / `--max-span` | `2` / `5` | Clamp on how many columns/rows a photo may span. |
-| `--iters` | `6000` | Packing search budget (see below). |
-| `--seed` | `11` | Makes the packing search deterministic. |
-| `--copyright` | `Trey Hakanson` | Rights holder in the footer; `""` omits the footer. |
-| `--year` | current year | Year of publication in the notice. |
-| `--terms` | usage line | Text under the notice; `""` omits it. |
+A browser cannot write to disk, so Save posts to the Vite dev server, which does
+the writing (`plugins/index.ts`).
 
-Recognised extensions: `.jpg .jpeg .png .gif .webp .avif .bmp .tif .tiff`.
-Unreadable files are skipped with a warning rather than failing the build.
+- Only captions are editable. Save is a whole-file overwrite, so `sections` and
+  anything else in the file is carried through from the copy last read off disk
+  — a section order you edited by hand is not undone by saving captions.
+- The page reads `config.json` on load, so it reflects hand-edits made since the
+  manifest was generated.
+- Because Save rewrites the whole file, it re-checks disk first: if the file
+  changed underneath you, the first Save is refused with a warning and a second
+  click overwrites deliberately.
+- If the write is rejected, the file is offered as a download instead, so edits
+  are never stranded in the tab.
+- **The route does not exist in a production build.** It needs an endpoint only
+  the dev server has, so it is compiled out entirely.
 
-### `build_index.py`
+---
 
-| Flag | Default | Purpose |
-| --- | --- | --- |
-| `--registry` | `galleries.json` | Registry to read. |
-| `--out` | `index.html` | Output page. |
-| `--title` | `Galleries` | Heading and `<title>`. |
-| `--copyright` / `--year` / `--terms` | as above | Same footer as the gallery. |
+## Downsizing
 
-### `build_admin.py`
+`raw_media/` holds the originals and is gitignored. `media/` is derived from it
+and committed, because the Pages build has to have something to publish.
 
-| Flag | Default | Purpose |
-| --- | --- | --- |
-| `--media` | `media` | Source folder to list. |
-| `--config` | `config.json` | File to load current values from. |
-| `--out` | `gallery_admin.html` | Output page. |
-| `--title` | `Caption editor` | Heading and `<title>`. |
+```sh
+npm run downsize            # only what changed
+npm run downsize -- --force # re-derive everything
+```
 
-### `serve_admin.py`
+Re-runs are incremental: a photo is rebuilt only when its original is newer than
+the output, or when `derive.maxEdge` / `derive.quality` changed.
 
-| Flag | Default | Purpose |
-| --- | --- | --- |
-| `--root` | `.` | Directory to serve. |
-| `--config` | `config.json` | The only file Save is allowed to write. |
-| `--port` | `8731` | Port on `127.0.0.1`. |
+### How the size was chosen
 
-A missing or empty registry produces a valid page with an empty-state panel;
-malformed JSON exits non-zero without writing.
+Photos are sized for the largest they can ever be drawn, which is the lightbox
+cap in `src/styles/lightbox.css`:
+
+```css
+max-width: min(92vw, 1500px);
+max-height: 84vh;
+```
+
+So the biggest CSS box a photo occupies is about **1500 x 1210**. The grid's
+widest tile is smaller — a span-5 of 12 columns on a 2560px viewport is ~1060
+CSS px — so the lightbox is the binding constraint. A **2560px** longest edge
+covers the grid at 2x device pixels and the lightbox at ~1.7x.
+
+Raising it further buys little here: the median original is only 2033px on its
+longest edge, so most of the library cannot reach 2x at the 1500px cap whatever
+the cap is. Only 10 of 54 photos are actually scaled down.
+
+### Where the saving comes from
+
+The originals are near-lossless — about **5.4 bits per pixel**, where a
+well-tuned web JPEG is 0.5–1.5. So most of the reduction is re-encoding, not
+resizing:
+
+| | |
+| --- | --- |
+| `raw_media/` | 138.5 MB, 5.44 bits/px |
+| `media/` | 28.5 MB, 1.59 bits/px |
+
+Derived files are progressive mozjpeg at 4:4:4 chroma, which keeps fine detail
+in stained glass and ironwork that 4:2:0 would smear.
+
+### Metadata
+
+Each derived photo is written from a raw pixel buffer, so **nothing is inherited
+from the original** — including its embedded thumbnail, which would otherwise
+add ~25 KB per file. EXIF orientation is baked into the pixels first, so stored
+dimensions are always the right way up (the layout reads those dimensions).
+
+Only two fields are written back, so a downloaded file still says who owns it:
+
+```
+Artist     Trey Hakanson
+Copyright  (C) 2026 Trey Hakanson. Personal viewing only -- no commercial use…
+```
+
+GPS coordinates and everything else are dropped.
 
 ---
 
 ## How the layout works
 
-Useful when tuning, or when the build output looks surprising.
+Useful when tuning, or when the output looks surprising.
 
 **Spans come from aspect ratio, normalized on area.** Each photo targets ~12
 grid cells: `cols = round(sqrt(area * ratio))`, `rows = round(sqrt(area / ratio))`.
@@ -326,99 +289,134 @@ Normalizing on *area* rather than a fixed dimension keeps a 1:1 photo from
 reading as much smaller than a 16:9 one. At the default area, a 4:3 photo lands
 on exactly `span 4 / span 3`.
 
-**Column counts are fixed per breakpoint** — 12 / 9 / 6, at ≥1080px, ≥720px, and
-below. They are not `auto-fill`, because the packing below is optimized for a
-known column count. Row height is derived from column width so cells stay square.
-On the narrowest tier, 4- and 5-wide tiles are refitted to half- or full-row
-widths, since at 6 columns they would always strand an unfillable gap.
+**Document order decides how tight the grid is.** CSS `grid-auto-flow: dense`
+can only backfill a hole with a *later* item that fits, so the browser's
+placement algorithm is simulated in `scripts/layout.ts` and the order is
+searched — exhaustively for sections of 8 photos or fewer, annealed above that.
+This is why the app ships a fixed order rather than sorting at runtime.
 
-**Document order is optimized for density.** CSS `grid-auto-flow: dense` can only
-backfill a hole with a *later* item that fits, so the order of the HTML decides
-how many holes you get. The build simulates the browser's placement algorithm and
-searches for an order that packs tightly — exhaustively when a section is small
-enough (≤8 photos), annealed above that. This is why photos are not in filename
-order. `--seed` keeps it reproducible; `--iters` trades build time for density.
+**Column counts are fixed per breakpoint** (12 / 9 / 6) rather than emerging
+from `auto-fill`, so the order that was optimised is the order that renders. At
+the narrowest tier every tile is refitted to a half row or a full one, because a
+4- or 5-wide tile in a 6-column grid always strands an unfillable pocket.
 
-Each section packs independently, so density is lower than one big grid would
-give — several sections means several ragged last rows. The build prints the fill
-rate per section so you can see the cost.
+Everything above happens at build time:
 
-**Favorites duplicate tiles.** A favorited photo appears both in the favorites
-section and in its own category. The duplicates keep their original category, so
-captions and the `Image--<category>` class still resolve correctly.
+```
+media/  +  config.json
+        │
+        ▼  npm run manifest
+        ▼
+src/data/manifest.json  +  src/data/spans.css
+        │
+        ▼  vite
+      dist/
+```
+
+`npm run dev` and `npm run build` both regenerate the manifest first, so it
+cannot drift from `config.json`.
 
 ---
 
-## The gallery page
+## Deploying to GitHub Pages
 
-- **Sections collapse.** Click a section heading to fold it away. These are
-  native `<details>`/`<summary>` elements, so they need no JavaScript and work
-  from the keyboard. All start expanded; the state is not remembered on reload.
-- **Click a photo** to open it full-screen; **click again** to flip to the back
-  and read its caption; **X**, **Escape**, or a click outside closes it.
-- Opening and closing animate from and back to the tile (a FLIP transform, with
-  the crop morphing from the tile's `cover` framing to the whole photo).
-- Tiles are keyboard reachable — **Tab** to one, **Enter** to open.
-- Respects `prefers-reduced-motion`: transitions are skipped, not degraded.
-- Every tile paints a dark placeholder (`--tile`) at its final size before any
-  image loads, so nothing reflows as photos arrive. Images are lazy-loaded.
-- Photos carry an `Image--<category>` class if you want per-category styling.
+The site is built to be served at `treyhakanson.github.io/photography`.
+
+The simplest arrangement is a repo **named `photography`** — GitHub serves
+project pages at `<user>.github.io/<repo>`, which is exactly the target URL, and
+`base` in `site.config.json` already matches.
+
+1. Push this repo to GitHub as `photography`.
+2. Copy `deploy/github-pages.yml` to `.github/workflows/deploy.yml`.
+3. Repo settings → Pages → Source: **GitHub Actions**.
+4. Push to `main`.
+
+To serve from a subfolder of the `treyhakanson.github.io` repo instead, build
+locally and copy `dist/` into that repo's `photography/` folder; `base` stays the
+same either way.
+
+### Two things that will bite
+
+- **`media/` is committed, `raw_media/` is not.** The build copies `media/`
+  into `dist/`, so it has to be in the repo — 28.5 MB, comfortably inside the
+  1 GB Pages limit. The originals never leave your machine, which matters
+  because a public repo grants every GitHub user the right to fork it and
+  **git history is permanent**: committing full-resolution files even once
+  leaves them forkable forever, whatever you do later.
+- **Do not use Git LFS for the photos.** Pages serves LFS pointer files as plain
+  text; every image would 404.
+
+### Deep links
+
+GitHub Pages has no rewrite rules, so a reload of
+`/photography/edinburgh-london-2026` would 404. The build writes a `404.html`
+that is a copy of `index.html`, which lets the router take over.
+
+---
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Regenerate the manifest, then serve with HMR. |
+| `npm run build` | Manifest, typecheck, bundle to `dist/`, copy media, write `404.html`. |
+| `npm run preview` | Serve `dist/` as it will be served in production. |
+| `npm run manifest` | Regenerate `src/data/` only. |
+| `npm run downsize` | Derive `media/` from `raw_media/`. Incremental; `-- --force` redoes everything. |
+| `npm run typecheck` | `tsc --noEmit`. |
+| `npm test` | Run the suite once. |
+| `npm run test:watch` | Watch mode. |
+
+Recognised image extensions: `.jpg .jpeg .png .gif .webp .avif .bmp .tif .tiff`.
+Dimensions are read for JPEG, PNG, GIF, WebP and BMP; anything else is skipped
+with a warning rather than failing the build.
+
+`src/data/manifest.json` and `src/data/spans.css` are generated but **committed**,
+so the tree always reflects a buildable state and diffs show when a caption or
+the packing order actually changed.
+
+---
+
+## Tests
+
+81 tests, no browser required (jsdom).
+
+| File | Covers |
+| --- | --- |
+| `layout.test.ts` | Span maths, the dense-placement simulation, tie-breaking. |
+| `markdown.test.tsx` | Caption links, scheme allowlist, injection resistance. |
+| `gallery.test.tsx` | Section order and counts, favorites, the lightbox and its flight. |
+| `index.test.tsx` | Gallery cards, counts, cover sizing, footer. |
+| `admin.test.tsx` | Serialization forms, section preservation, staleness, fallbacks. |
+| `validate.test.ts` | The dev write endpoint's input gate. |
+| `css-scope.test.tsx` | That no two pages share a class name. Every stylesheet is loaded on every route, so a shared name silently restyles the other page. |
 
 ---
 
 ## Copyright
 
-Both public pages carry a footer:
+The footer notice is rendered from `site.config.json`. It is not what creates
+the copyright — that is automatic — but it rebuts an "innocent infringement"
+defense and deters casual reuse.
 
-```
-© 2026 Trey Hakanson. All rights reserved.
-Personal viewing only — no commercial use or redistribution without permission.
-```
+Two things worth doing before publishing photos you care about:
 
-Copyright is automatic on creation — the notice does not create the right. It
-does defeat an "innocent infringement" defence and deter casual reuse, which is
-why it is worth having.
-
-`--year` defaults to the build year. **Pin it with `--year 2026` if you want the
-notice to stay at the year of publication** rather than drifting each rebuild.
-
-Two things deliberately not done yet, both more effective than the notice:
-
-- **Embed IPTC/XMP rights metadata in the JPEGs.** It travels with a downloaded
-  file, and stripping it is a separate violation (17 U.S.C. § 1202).
-- **Downsize the images.** A ~1800px JPEG is fine on screen and of little use for
-  print, which is the practical limit on commercial reuse. Also the single
-  biggest win for page weight.
-
-## Publishing
-
-The output is static; any host works. For GitHub Pages, commit `index.html`,
-`gallery.html`, `media/`, and the two JSON files, and point Pages at the branch
-root. `gallery_admin.html` is a local tool — there is no need to publish it.
-
-Two things to know before the first commit:
-
-1. **Resize first.** `media/` is currently ~139 MB of full-resolution originals,
-   while the page never displays more than ~1500px. Re-encoding at a 1800px
-   longest edge is roughly 21 MB with no visible difference. Git keeps every
-   version of a binary forever, so committing the originals and re-encoding
-   later means the repo carries both.
-2. **Don't use Git LFS for this.** GitHub Pages does not resolve LFS objects —
-   it serves the pointer file, so images render broken.
-
-GitHub's limits are not a problem at this size: 100 MB per file (largest here is
-~9 MB) and a 1 GB published site.
+- **Embed IPTC/XMP rights metadata** in the JPEGs. Unlike the footer, it travels
+  with a downloaded file.
+- **Add a `LICENSE`.** A repo with none is "all rights reserved", which is the
+  strict default you want for the photos — but if you license the *code*, scope
+  that license explicitly to the code so it cannot be read as covering `media/`.
 
 ---
 
-## Local preview
+## Provenance
 
-```sh
-uv run serve_admin.py
-```
+The grid packing and the lightbox began as a Python generator that emitted a
+single HTML file. The layout algorithm was ported rather than reinvented, and
+verified against it: identical image dimensions for all 54 photos, identical
+fill percentages in every section, and byte-identical photo order in the
+sections small enough to search exhaustively.
 
-Then open <http://127.0.0.1:8731/>. Plain `python -m http.server` works too for
-viewing, but the editor's Save button needs `serve_admin.py`.
-
-Use a server rather than opening the files directly — `file://` blocks both the
-caption re-fetch and saving.
+`scripts/layout.ts` rounds halves to even rather than up. The published layout
+was computed with that rule, so changing it would reshape tiles across the
+gallery.

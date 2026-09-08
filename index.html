@@ -1,122 +1,13 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Galleries</title>
-<style>
-:root {
-  --bg: #111;
-  --card: #1a1a1e;
-  --line: #2a2a31;
-  --ink: #ededf2;
-  --muted: #8b8b96;
-  --tile: #1a1a1e;  /* placeholder behind a cover that hasn't loaded */
-  color-scheme: dark;
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  padding: clamp(1.5rem, 5vw, 4rem) clamp(1rem, 5vw, 4rem);
-  background: var(--bg);
-  color: var(--ink);
-  font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
-}
-.Masthead { max-width: 70rem; margin: 0 auto 2.5rem; }
-.Masthead h1 {
-  margin: 0 0 0.4rem;
-  font-size: clamp(1.5rem, 4vw, 2.1rem);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-.Masthead p { margin: 0; color: var(--muted); font-size: 0.92rem; }
-
-.Galleries {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
-  gap: clamp(1rem, 2.5vw, 1.75rem);
-  max-width: 70rem;
-  margin: 0 auto;
-  padding: 0;
-  list-style: none;
-}
-
-.Gallery {
-  display: block;
-  overflow: hidden;
-  color: inherit;
-  text-decoration: none;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 2px;  /* matches .Image in the gallery view */
-}
-.Gallery:focus-visible { outline: 2px solid #7aa2f7; outline-offset: 3px; }
-
-.Gallery-cover {
-  display: block;
-  width: 100%;
-  /* height:auto is load-bearing. The width/height attributes on the <img>
-     are presentational hints that map to CSS width/height; width:100% beats
-     the width hint, but without this the height hint survives (a 2015px tall
-     card) and, both axes being definite, aspect-ratio is ignored. */
-  height: auto;
-  aspect-ratio: 3 / 2;
-  object-fit: cover;
-  background: var(--tile);
-  border-bottom: 1px solid var(--line);
-}
-.Gallery-body { padding: 0.95rem 1.1rem 1.15rem; }
-.Gallery-title { margin: 0 0 0.3rem; font-size: 1.05rem; font-weight: 600; }
-.Gallery-meta { margin: 0; color: var(--muted); font-size: 0.85rem; }
-.Gallery-sections {
-  margin: 0.55rem 0 0;
-  color: #6e6e7a;
-  font-size: 0.78rem;
-  letter-spacing: 0.04em;
-}
-
-.Footer {
-  max-width: 70rem;
-  margin: 3rem auto 0;
-  padding: 1.4rem 0 0.6rem;
-  border-top: 1px solid var(--line);
-  color: #6e6e7a;
-  font-size: 0.78rem;
-  line-height: 1.7;
-}
-.Footer-terms { display: block; color: #55555f; }
-
-.Empty {
-  max-width: 70rem;
-  margin: 0 auto;
-  padding: 2rem;
-  color: var(--muted);
-  background: var(--card);
-  border: 1px dashed var(--line);
-  border-radius: 2px;
-}
-</style>
-</head>
-<body>
-<header class="Masthead">
-  <h1>Galleries</h1>
-  <p>1 gallery · 54 photos</p>
-</header>
-<ul class="Galleries">
-  <li>
-   <a class="Gallery" href="gallery.html">
-    <img class="Gallery-cover" src="media/arch/bank.jpg" alt="" width="1756" height="1756" loading="lazy" decoding="async">
-    <div class="Gallery-body">
-    <h2 class="Gallery-title">Edinburgh &amp; London 2026</h2>
-    <p class="Gallery-meta">54 photos · 6 sections · 2026-09-07</p>
-    <p class="Gallery-sections">Architecture · Stained Glass · Things · Nature · Cones · Kirkyard</p>
-    </div>
-   </a>
-  </li>
-</ul>
-<footer class="Footer">
-  © 2026 Trey Hakanson. All rights reserved.
-  <span class="Footer-terms">Personal viewing only — no commercial use or redistribution without permission.</span>
-</footer>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Galleries</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

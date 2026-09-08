@@ -1,16 +1,12 @@
-# Python-generated files
-__pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
+node_modules
+dist
 
-# Media
-media/
+# Full-resolution originals. media/ is derived from these and committed;
+# see "Downsizing" in the README.
+raw_media/
 
-# Virtual environments
-.venv
+# Per-machine record of what produced media/; source mtimes make it churn.
+.derived.json
 
-# Miscellaneous
 .DS_Store
+*.local

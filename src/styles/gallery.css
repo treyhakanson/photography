@@ -1,0 +1,81 @@
+/* The gallery page: header, collapsible sections, and the dense grid. */
+
+.GalleryPage { padding: var(--pad); }
+.GalleryPage header { padding: 0.75rem 0.4rem 1.25rem; }
+.GalleryPage h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.GalleryPage header p { margin: 0; color: #8b8b8b; font-size: 0.8rem; }
+
+.gridContainer {
+  display: grid;
+  /* Square cells: row height tracks the computed column width. --n is set per
+     breakpoint in the generated spans.css. */
+  grid-auto-rows: calc(
+    (100vw - var(--sb) - 2 * var(--pad) - (var(--n) - 1) * var(--gap)) / var(--n)
+  );
+  grid-auto-flow: dense;
+  grid-gap: var(--gap);
+}
+
+.Image {
+  margin: 0;
+  overflow: hidden;
+  background: var(--tile);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.Image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.Image:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.Section + .Section { margin-top: 2rem; }
+.Section-body { margin: 0; background: unset; }
+.Section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #9a9aa6;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;              /* Firefox default marker */
+}
+.Section-title::-webkit-details-marker { display: none; }
+.Section-title:hover { color: #c8c8d2; }
+.Section-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.Section-title::before {
+  content: "";
+  flex: none;
+  width: 0.36rem;
+  height: 0.36rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);     /* collapsed: points right */
+  transition: transform 0.18s ease;
+}
+.Section-body[open] > .Section-title::before {
+  transform: rotate(45deg);      /* expanded: points down */
+}
+.Section-count {
+  margin-left: 0.5rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: #61616c;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .Section-title::before { transition: none; }
+}
