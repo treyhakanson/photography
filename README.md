@@ -328,9 +328,8 @@ project pages at `<user>.github.io/<repo>`, which is exactly the target URL, and
 `base` in `site.config.json` already matches.
 
 1. Push this repo to GitHub as `photography`.
-2. Copy `deploy/github-pages.yml` to `.github/workflows/deploy.yml`.
-3. Repo settings → Pages → Source: **GitHub Actions**.
-4. Push to `main`.
+2. Repo settings → Pages → Source: **GitHub Actions**.
+3. Push to `main`.
 
 To serve from a subfolder of the `treyhakanson.github.io` repo instead, build
 locally and copy `dist/` into that repo's `photography/` folder; `base` stays the
