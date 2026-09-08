@@ -1,4 +1,4 @@
-"""Serve the project locally and let gallery_admin.html save captions.json.
+"""Serve the project locally and let gallery_admin.html save config.json.
 
 A page loaded over plain http:// cannot write to disk, so the Save button posts
 its JSON here and this process writes the file. Everything else behaves like
@@ -8,7 +8,7 @@ its JSON here and this process writes the file. Everything else behaves like
 
 Binds to loopback only. This process writes to a file on your disk, so it is
 deliberately not reachable from the network, and the only path it will ever
-write is the --captions file named at startup.
+write is the --config file named at startup.
 """
 
 import argparse
@@ -20,17 +20,42 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-SAVE_PATH = "/api/captions"
+SAVE_PATH = "/api/config"
 MAX_BODY = 4 * 1024 * 1024
 
 
 def validate(data) -> str:
-    """Return an error message, or "" if this looks like a captions file."""
+    """Return an error message, or "" if this looks like a config file.
+
+    Unknown top-level keys pass: the editor writes back whatever it read, so
+    rejecting a field added by hand would make the file unsaveable.
+    """
     if not isinstance(data, dict):
         return "expected a JSON object at the top level"
-    for group, bucket in data.items():
+
+    sections = data.get("sections")
+    if sections is not None:
+        if not isinstance(sections, list):
+            return "'sections' should be an array"
+        for i, item in enumerate(sections):
+            if isinstance(item, str):
+                continue
+            if not isinstance(item, dict):
+                return f"sections[{i}] should be a string or an object"
+            if not isinstance(item.get("id"), str) or not item["id"]:
+                return f"sections[{i}] needs a non-empty string 'id'"
+            extra = set(item) - {"id", "label"}
+            if extra:
+                return f"sections[{i}] has unknown field(s): {sorted(extra)}"
+
+    captions = data.get("captions")
+    if captions is None:
+        return "missing 'captions'"
+    if not isinstance(captions, dict):
+        return "'captions' should map categories to photo entries"
+    for group, bucket in captions.items():
         if not isinstance(bucket, dict):
-            return f"{group!r} should map photo names to entries"
+            return f"captions.{group!r} should map photo names to entries"
         for name, value in bucket.items():
             if isinstance(value, str):
                 continue
@@ -45,10 +70,10 @@ def validate(data) -> str:
 def write_atomically(path: Path, text: str) -> None:
     """Write via a temp file in the same directory, then rename over the target.
 
-    A half-written captions.json would be worse than a failed save.
+    A half-written config.json would be worse than a failed save.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=".captions-", suffix=".tmp")
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=".config-", suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             fh.write(text)
@@ -61,7 +86,7 @@ def write_atomically(path: Path, text: str) -> None:
 
 
 class Handler(SimpleHTTPRequestHandler):
-    captions: Path = Path("captions.json")
+    config: Path = Path("config.json")
 
     def _json(self, code: int, payload: dict) -> None:
         body = json.dumps(payload).encode("utf-8")
@@ -96,16 +121,17 @@ class Handler(SimpleHTTPRequestHandler):
             return
 
         try:
-            write_atomically(self.captions,
+            write_atomically(self.config,
                              json.dumps(data, indent=2, ensure_ascii=False) + "\n")
         except OSError as exc:
             self._json(500, {"ok": False, "error": f"could not write: {exc}"})
             return
 
-        entries = sum(len(v) for v in data.values())
-        print(f"saved {self.captions} ({entries} entries)")
+        entries = sum(len(v) for v in data["captions"].values()
+                      if isinstance(v, dict))
+        print(f"saved {self.config} ({entries} entries)")
         self._json(200, {"ok": True, "entries": entries,
-                         "path": str(self.captions)})
+                         "path": str(self.config)})
 
     def end_headers(self) -> None:
         # The admin page must never be served from cache after a rebuild.
@@ -116,7 +142,7 @@ class Handler(SimpleHTTPRequestHandler):
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path("."))
-    parser.add_argument("--captions", type=Path, default=Path("captions.json"))
+    parser.add_argument("--config", type=Path, default=Path("config.json"))
     parser.add_argument("--port", type=int, default=8731)
     args = parser.parse_args()
 
@@ -125,7 +151,7 @@ def main() -> int:
         print(f"no such directory: {args.root}", file=sys.stderr)
         return 1
 
-    Handler.captions = args.captions.resolve()
+    Handler.config = args.config.resolve()
     handler = partial(Handler, directory=str(root))
 
     try:
@@ -136,7 +162,7 @@ def main() -> int:
         return 1
 
     print(f"serving {root} at http://127.0.0.1:{args.port}/")
-    print(f"saving to {Handler.captions}")
+    print(f"saving to {Handler.config}")
     print(f"open http://127.0.0.1:{args.port}/gallery_admin.html")
     try:
         server.serve_forever()

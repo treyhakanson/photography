@@ -4,13 +4,13 @@
     "images": 54,
     "sections": [
       "Architecture",
+      "Cones",
       "Stained Glass",
       "Things",
       "Nature",
-      "Cones",
       "Kirkyard"
     ],
-    "updated": "2026-09-06",
+    "updated": "2026-09-07",
     "cover": "media/arch/bank.jpg",
     "cover_width": 1756,
     "cover_height": 1756

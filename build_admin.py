@@ -1,10 +1,14 @@
-"""Generate gallery_admin.html: a local editor for captions.json.
+"""Generate gallery_admin.html: a local editor for the captions in config.json.
 
 Edit each photo's title, caption and favorite flag, then hit Save to overwrite
-captions.json in place. Saving posts to serve_admin.py, which does the writing --
+config.json in place. Saving posts to serve_admin.py, which does the writing --
 a page cannot touch the disk on its own. Served any other way (plain http.server,
 or a file:// URL) the button falls back to downloading the file instead, so the
 edits are never trapped in the tab.
+
+Only the captions are editable here. Save is a whole-file write, so everything
+else config.json holds -- the section order above all -- is carried through from
+the copy last read off disk rather than regenerated.
 
 Either path writes the shape rules documented in the README: a photo with
 nothing set serializes to "", a photo with only a caption to a bare string, and
@@ -150,10 +154,11 @@ input::placeholder, textarea::placeholder { color: #4e4e58; }
 
 JS = """
 (function () {
-  var SAVE_URL = '/api/captions';
+  var SAVE_URL = '/api/config';
   // The embedded copy is only a fallback for file://; over http the file on
   // disk wins, because it may have been edited since this page was generated.
-  var original = JSON.parse(document.getElementById('captions-data').textContent);
+  var config = JSON.parse(document.getElementById('config-data').textContent);
+  var original = config.captions || {};
   var stale = false;
   var rows = [].slice.call(document.querySelectorAll('.Row'));
   var status = document.getElementById('status');
@@ -231,6 +236,19 @@ JS = """
       || was.favorite !== now.favorite;
   }
 
+  // Save rewrites the whole file, so everything the form does not own --
+  // section order, labels, anything added later -- is spliced back in from the
+  // copy last read off disk. Assigning over an existing key keeps its position,
+  // so the file's own layout survives the round trip.
+  function payload() {
+    var out = {};
+    Object.keys(config).forEach(function (k) {
+      out[k] = (k === 'captions') ? null : config[k];
+    });
+    out.captions = build();
+    return out;
+  }
+
   // Sorted so a saved file diffs cleanly against the one on disk.
   function build() {
     var out = {};
@@ -277,7 +295,7 @@ JS = """
     var url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
     var a = document.createElement('a');
     a.href = url;
-    a.download = 'captions.json';
+    a.download = 'config.json';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -305,25 +323,30 @@ JS = """
     // guard here too so nothing can post an unchanged file.
     if (saving || refresh() === 0) return;
     var data = build();
-    var text = JSON.stringify(data, null, 2) + '\\n';
+    var text = JSON.stringify(payload(), null, 2) + '\\n';
 
     if (typeof fetch !== 'function' || location.protocol === 'file:') {
       fallback(text, 'No server');
       return;
     }
 
-    // Re-read disk first: captions.json may have been edited elsewhere since
+    // Re-read disk first: config.json may have been edited elsewhere since
     // this page loaded, and Save is a whole-file overwrite.
     if (!stale && typeof fetch === 'function') {
-      fetch(CAPTIONS_URL, { cache: 'no-store' }).then(function (r) {
+      fetch(CONFIG_URL, { cache: 'no-store' }).then(function (r) {
         return r.ok ? r.json() : null;
       }).then(function (disk) {
-        if (disk && canon(disk) !== canon(original)) {
+        if (!disk || typeof disk !== 'object') { post(data, text); return; }
+        // Adopt what the file now says about everything the form does not own,
+        // so a section order edited by hand isn't undone by saving captions.
+        var moved = JSON.stringify(config) !== JSON.stringify(disk);
+        config = disk;
+        if (canon(disk.captions || {}) !== canon(original)) {
           stale = true;
-          say('captions.json changed on disk \u2014 Save again to overwrite it',
+          say('config.json changed on disk \u2014 Save again to overwrite it',
               'bad');
         } else {
-          post(data, text);
+          post(data, moved ? JSON.stringify(payload(), null, 2) + '\\n' : text);
         }
       }).catch(function () { post(data, text); });
       return;
@@ -350,7 +373,7 @@ JS = """
       saving = false;
       stale = false;
       commit(data);
-      say('Saved ' + (body.entries || 0) + ' entries to captions.json', 'good');
+      say('Saved ' + (body.entries || 0) + ' entries to config.json', 'good');
     }).catch(function (err) {
       saving = false;
       refresh();
@@ -363,20 +386,22 @@ JS = """
   });
 
   // Load the file as it is on disk right now. This page is generated, so its
-  // embedded copy goes stale the moment captions.json is edited by hand -- and
+  // embedded copy goes stale the moment config.json is edited by hand -- and
   // saving from a stale form would silently wipe those edits.
   function hydrate() {
     if (typeof fetch !== 'function' || location.protocol === 'file:') return;
-    fetch(CAPTIONS_URL, { cache: 'no-store' }).then(function (r) {
+    fetch(CONFIG_URL, { cache: 'no-store' }).then(function (r) {
       return r.ok ? r.json() : null;
     }).then(function (data) {
       if (!data || typeof data !== 'object') return;
+      var caps = data.captions || {};
       if (dirty()) {                       // raced a fast typist; don't stomp
         stale = true;
-        say('captions.json on disk differs \u2014 reload before saving', 'bad');
+        say('config.json on disk differs \u2014 reload before saving', 'bad');
         return;
       }
-      if (canon(data) !== canon(original)) fill(data);
+      config = data;
+      if (canon(caps) !== canon(original)) fill(caps);
     }).catch(function () {});
   }
 
@@ -418,8 +443,9 @@ def row(item: dict, data: dict) -> str:
     )
 
 
-def render(groups: list[tuple[str, list[dict]]], captions: dict, title: str,
-           captions_href: str, labels: dict) -> str:
+def render(groups: list[tuple[str, list[dict]]], config: dict, title: str,
+           config_href: str, labels: dict) -> str:
+    captions = config.get("captions") or {}
     body = []
     for kind, items in groups:
         rows = "\n".join(
@@ -428,14 +454,15 @@ def render(groups: list[tuple[str, list[dict]]], captions: dict, title: str,
         )
         body.append(
             f'  <section class="Group">\n'
-            f'    <h2 class="Group-name">{html.escape(labels.get(kind, kind))}'
+            f'    <h2 class="Group-name">'
+            f'{html.escape(labels.get(kind) or bg.titleize(kind))}'
             f'</h2>\n'
             f"{rows}\n"
             f"  </section>"
         )
 
-    payload = json.dumps(captions, ensure_ascii=False).replace("<", "\\u003c")
-    captions_url = json.dumps(captions_href)
+    payload = json.dumps(config, ensure_ascii=False).replace("<", "\\u003c")
+    config_url = json.dumps(config_href)
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -454,8 +481,8 @@ def render(groups: list[tuple[str, list[dict]]], captions: dict, title: str,
 <main>
 {chr(10).join(body)}
 </main>
-<script type="application/json" id="captions-data">{payload}</script>
-<script>var CAPTIONS_URL = {captions_url};{JS}</script>
+<script type="application/json" id="config-data">{payload}</script>
+<script>var CONFIG_URL = {config_url};{JS}</script>
 </body>
 </html>
 """
@@ -465,8 +492,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--media", type=Path, default=Path("media"))
     parser.add_argument("--out", type=Path, default=Path("gallery_admin.html"))
-    parser.add_argument("--captions", type=Path, default=Path("captions.json"))
-    parser.add_argument("--categories", type=Path, default=Path("categories.json"))
+    parser.add_argument("--config", type=Path, default=Path("config.json"))
     parser.add_argument("--title", default="Caption editor")
     args = parser.parse_args()
 
@@ -481,28 +507,33 @@ def main() -> int:
         print(f"no images found under {args.media}", file=sys.stderr)
         return 1
 
-    captions = {}
-    if args.captions.exists():
+    # Read-only: this page edits captions, and build_gallery.py owns growing
+    # the file. A category missing from "sections" still gets a group here.
+    config = {}
+    if args.config.exists():
         try:
-            loaded = json.loads(args.captions.read_text(encoding="utf-8"))
+            loaded = json.loads(args.config.read_text(encoding="utf-8"))
             if isinstance(loaded, dict):
-                captions = loaded
+                config = loaded
         except json.JSONDecodeError as exc:
-            print(f"{args.captions}: invalid JSON ({exc})", file=sys.stderr)
+            print(f"{args.config}: invalid JSON ({exc})", file=sys.stderr)
             return 1
     else:
-        print(f"{args.captions} not found; starting from blank entries",
+        print(f"{args.config} not found; starting from blank entries",
               file=sys.stderr)
 
-    groups = [
-        (kind, [i for i in items if i["kind"] == kind])
-        for kind in sorted({i["kind"] for i in items})
-    ]
-    href = quote(
-        Path(os.path.relpath(args.captions.resolve(), out.parent)).as_posix()
+    order = bg.sections_of(config)
+    labels = {k: label for k, label in order}
+    rank = {k: i for i, (k, _) in enumerate(order)}
+    groups = sorted(
+        ((kind, [i for i in items if i["kind"] == kind])
+         for kind in {i["kind"] for i in items}),
+        key=lambda kv: (rank.get(kv[0], len(rank)), kv[0]),
     )
-    labels = bg.load_labels(args.categories, [k for k, _ in groups])
-    out.write_text(render(groups, captions, args.title, href, labels),
+    href = quote(
+        Path(os.path.relpath(args.config.resolve(), out.parent)).as_posix()
+    )
+    out.write_text(render(groups, config, args.title, href, labels),
                    encoding="utf-8")
     print(f"wrote {args.out} ({len(items)} photos in {len(groups)} categories)")
     return 0

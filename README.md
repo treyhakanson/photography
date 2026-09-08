@@ -8,7 +8,7 @@ anywhere.
 ```
 uv run build_gallery.py      # media/ -> gallery.html  (+ registers itself)
 uv run build_index.py        # galleries.json -> index.html
-uv run build_admin.py        # media/ + captions.json -> gallery_admin.html
+uv run build_admin.py        # media/ + config.json -> gallery_admin.html
 uv run serve_admin.py        # local server: preview + save from the editor
 ```
 
@@ -34,13 +34,12 @@ There is no separate activate step — `uv run` handles it. To add a dependency,
 | Path | Tracked | What it is |
 | --- | --- | --- |
 | `media/` | yes | Source photos. **One folder per category** — the folder name becomes the section. |
-| `captions.json` | yes | Titles, captions, and favorite flags. Hand-edited. |
-| `categories.json` | yes | Folder → display name for section headers. |
+| `config.json` | yes | Section order and labels, plus every photo's title, caption and favorite flag. Hand-edited. |
 | `galleries.json` | yes | Registry of built galleries. Written by `build_gallery.py`, read by `build_index.py`. |
 | `build_gallery.py` | yes | Generates one gallery page. |
 | `build_index.py` | yes | Generates the landing page listing galleries. |
 | `build_admin.py` | yes | Generates the local caption editor. |
-| `serve_admin.py` | yes | Local server. Serves the pages and writes `captions.json` for the editor. |
+| `serve_admin.py` | yes | Local server. Serves the pages and writes `config.json` for the editor. |
 | `gallery.html` | generated | The gallery. Self-contained: CSS and JS are inlined. |
 | `index.html` | generated | Landing page with a card per gallery. |
 | `gallery_admin.html` | generated | Local caption editor. Not meant to be published. |
@@ -62,7 +61,50 @@ uv run build_gallery.py && uv run build_index.py
 
 ---
 
-## `captions.json`
+## `config.json`
+
+One file holds everything the build reads that isn't an image: what order the
+sections go in, what they are called, and what each photo says.
+
+```jsonc
+{
+  "sections": [ /* order and labels */ ],
+  "captions":  { /* category -> photo name -> entry */ }
+}
+```
+
+Both keys are created if missing. Anything else in the file is left alone and
+carried through edits, so you can park your own notes in it.
+
+### `sections`
+
+**Array position is section order.** Move an entry to move the section,
+`favorites` included — it is a section like any other.
+
+```jsonc
+"sections": [
+  "favorites",                               // shorthand: label is the titleized id
+  { "id": "arch",  "label": "Architecture" }, // when the folder name isn't the label
+  { "id": "glass", "label": "Stained Glass" },
+  { "id": "kirk",  "label": "Kirkyard" }
+]
+```
+
+`id` is the folder name under `media/`. A bare string is shorthand for
+`{"id": "<string>"}`, whose label becomes the title-cased folder name — so
+`"nature"` displays as *Nature* and only categories whose label differs need the
+object form.
+
+The **folder name stays the identity** — it keys `captions` and the
+`Image--<folder>` classes — so renaming a label never touches your caption data.
+Labels appear in the gallery's section headers, on the back of each card, in the
+editor's group headings, and on the index card.
+
+A category with no entry here is **appended at the end** on the next build, with
+a title-cased default label, ready for you to move. Removing an entry therefore
+sends that section to the bottom rather than hiding it.
+
+### `captions`
 
 Shape is `category -> photo name -> entry`. The category is the folder name; the
 photo name is the filename without extension.
@@ -70,7 +112,7 @@ photo name is the filename without extension.
 Every field is optional, so an entry can be written three ways:
 
 ```jsonc
-{
+"captions": {
   "arch": {
     "bank": "",                          // nothing set yet (the default stub)
     "nook": "A window in a shell grotto", // shorthand: a bare string is the caption
@@ -94,8 +136,9 @@ Rules the build follows:
 - **New photos get a `""` stub** added automatically, so the file stays a
   complete index of your library.
 - **Existing entries are never rewritten.** The file is only touched when new
-  stubs need adding, and your chosen form is preserved — `{"favorite": true}`
-  will not be expanded with empty `title`/`caption` keys.
+  stubs or sections need adding, and your chosen form is preserved —
+  `{"favorite": true}` will not be expanded with empty `title`/`caption` keys,
+  and the `sections` array is never resorted.
 - **Deleting a photo leaves its entry behind.** Harmless, but prune by hand if
   you like.
 
@@ -123,9 +166,13 @@ are plain text.
 
 ### Editing in a browser
 
-`gallery_admin.html` is a local editor for this file — a thumbnail per photo
+`gallery_admin.html` is a local editor for the captions — a thumbnail per photo
 with fields for title, caption and favorite, and a **Save** button at the top
-left that overwrites `captions.json` in place.
+left that overwrites `config.json` in place. Groups appear in section order.
+
+The editor only edits captions. Save is a whole-file write, so `sections` and
+anything else in the file is carried through from the copy it last read off
+disk — reordering sections is a hand edit, not something the editor does.
 
 ```sh
 uv run build_admin.py        # rebuild the editor after adding photos
@@ -137,13 +184,13 @@ does the writing. **The editor must be opened through that server** — it also
 serves the gallery, so it can replace `python -m http.server` entirely.
 
 Opened any other way (plain `http.server`, or a `file://` URL) Save falls back to
-downloading `captions.json`, so edits are never stranded in the tab. The same
+downloading `config.json`, so edits are never stranded in the tab. The same
 happens if the write is rejected; the error is shown in the bar.
 
 Written output uses the three forms described above, with categories and names
 sorted, so it diffs cleanly against what is on disk.
 
-The page reads `captions.json` from disk on load, so it reflects hand-edits made
+The page reads `config.json` from disk on load, so it reflects hand-edits made
 since it was generated — you do not need to re-run `build_admin.py` after editing
 the JSON, only after adding photos. Because Save rewrites the whole file, it
 re-checks disk first: if the file changed underneath you (say you edited it in an
@@ -158,52 +205,23 @@ Neither the editor nor the server is meant to be published; both are local tools
 
 **About the write endpoint.** `serve_admin.py` binds to `127.0.0.1` only, so it is
 not reachable from your network, and the only path it will ever write is the
-`--captions` file named at startup. Payloads are validated before anything
-touches disk, and the write is atomic (temp file plus rename), so a rejected or
-interrupted save cannot leave a half-written `captions.json`.
+`--config` file named at startup. Payloads are validated before anything touches
+disk, and the write is atomic (temp file plus rename), so a rejected or
+interrupted save cannot leave a half-written `config.json`.
 
 ### Live editing
 
-When the page is served over `http(s)`, it re-fetches `captions.json` at load,
-so editing captions and refreshing is enough — no rebuild. Opened as a `file://`
-URL the browser blocks that fetch and the build-time copy is used, so there you
-do need to rebuild.
+When the page is served over `http(s)`, it re-fetches `config.json` at load, so
+editing captions or labels and refreshing is enough — no rebuild. Section
+*order* is baked into the markup, so reordering does need a rebuild. Opened as a
+`file://` URL the browser blocks that fetch and the build-time copy is used, so
+there you need to rebuild for any change.
 
 > **Note:** macOS Finder comments are *not* a caption source. They live in an
 > extended attribute, not in the image file, and are stripped by git, copies,
-> and uploads. Put text in `captions.json`.
+> and uploads. Put text in `config.json`.
 
 ---
-
-## `categories.json`
-
-Section headers read from here, so a folder can be named for convenience and
-still display properly:
-
-```json
-{
-  "favorites": "Favorites",
-  "arch": "Architecture",
-  "glass": "Stained Glass",
-  "elem": "Things",
-  "nature": "Nature",
-  "cone": "Cones",
-  "kirk": "Kirkyard"
-}
-```
-
-**Key order is section order.** Reorder the keys to reorder the page —
-including `favorites`, which is a section like any other. A category not listed
-here falls in after the listed ones, alphabetically.
-
-The **folder name stays the identity** — it keys `captions.json` and the
-`Image--<folder>` classes — so renaming a label here never touches your caption
-data. A new folder gets a title-cased default added automatically, which you can
-then edit. Labels appear in the gallery's section headers, on the back of each
-card, in the editor's group headings, and on the index card.
-
-To rename a category, edit its value here and rebuild. To rename the *folder*,
-you would also have to move its key in `captions.json`.
 
 ## `galleries.json`
 
@@ -215,11 +233,12 @@ rebuilds update in place. `build_index.py` renders one card per entry.
   "gallery.html": {
     "title": "Edinburgh & London 2026",
     "images": 54,
-    "sections": ["arch", "cone", "elem", "glass", "kirk", "nature"],
-    "updated": "2026-09-05",
-    "cover": "media/cone/hume5beers.jpg",
-    "cover_width": 1513,
-    "cover_height": 2015
+    "sections": ["Architecture", "Stained Glass", "Things", "Nature", "Cones",
+                 "Kirkyard"],   // display labels, in config.json order
+    "updated": "2026-09-07",
+    "cover": "media/arch/bank.jpg",
+    "cover_width": 1756,
+    "cover_height": 1756
   }
 }
 ```
@@ -235,7 +254,7 @@ registers itself, and the index picks it up:
 
 ```sh
 uv run build_gallery.py --media media2 --out iceland.html \
-    --captions iceland-captions.json --title "Iceland 2027"
+    --config iceland-config.json --title "Iceland 2027"
 uv run build_index.py
 ```
 
@@ -250,8 +269,7 @@ uv run build_index.py
 | `--media` | `media` | Source folder, scanned recursively. |
 | `--out` | `gallery.html` | Output page. |
 | `--title` | `Edinburgh & London 2026` | `<h1>` and `<title>`. |
-| `--captions` | `captions.json` | Caption file. |
-| `--categories` | `categories.json` | Folder → display name map. |
+| `--config` | `config.json` | Section order and labels, plus captions. |
 | `--registry` | `galleries.json` | Registry to record this gallery in. |
 | `--no-registry` | off | Build without registering (keeps it off the index). |
 | `--index` | `index.html` | Target of the back link. |
@@ -281,8 +299,7 @@ Unreadable files are skipped with a warning rather than failing the build.
 | Flag | Default | Purpose |
 | --- | --- | --- |
 | `--media` | `media` | Source folder to list. |
-| `--captions` | `captions.json` | File to load current values from. |
-| `--categories` | `categories.json` | Folder → display name map. |
+| `--config` | `config.json` | File to load current values from. |
 | `--out` | `gallery_admin.html` | Output page. |
 | `--title` | `Caption editor` | Heading and `<title>`. |
 
@@ -291,7 +308,7 @@ Unreadable files are skipped with a warning rather than failing the build.
 | Flag | Default | Purpose |
 | --- | --- | --- |
 | `--root` | `.` | Directory to serve. |
-| `--captions` | `captions.json` | The only file Save is allowed to write. |
+| `--config` | `config.json` | The only file Save is allowed to write. |
 | `--port` | `8731` | Port on `127.0.0.1`. |
 
 A missing or empty registry produces a valid page with an empty-state panel;

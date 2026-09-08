@@ -222,7 +222,22 @@ LIGHTBOX_JS = """
   var REVEAL_MS = 120;  // longest we'll hold a blank overlay waiting on bytes
   var EASE = 'cubic-bezier(0.2, 0.7, 0.3, 1)';
 
-  var captions = JSON.parse(document.getElementById('captions-data').textContent);
+  // Section labels live in the same array that fixes section order, so they
+  // are read back out of it rather than shipped as a second copy.
+  function labelsOf(cfg) {
+    var out = {};
+    var list = (cfg && cfg.sections) || [];
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i];
+      if (typeof s === 'string') out[s] = s;
+      else if (s && s.id) out[s.id] = s.label || s.id;
+    }
+    return out;
+  }
+
+  var config = JSON.parse(document.getElementById('config-data').textContent);
+  var captions = config.captions || {};
+  var labels = labelsOf(config);
   var box = document.getElementById('lightbox');
   var wrap = box.querySelector('.CardWrap');
   var card = box.querySelector('.Card');
@@ -237,13 +252,20 @@ LIGHTBOX_JS = """
   var flight = null;   // drives settle(); kept after finishing so open() can cancel
   var extras = [];     // veil fade + crop morph, cancelled alongside
 
-  // Served over http(s), re-read the JSON so caption edits show on reload
-  // without a rebuild. From file:// the build-time copy above is all we get.
+  // Served over http(s), re-read the file so edits show on reload without a
+  // rebuild. From file:// the build-time copy above is all we get. Section
+  // order is baked into the markup, so only labels and captions can change
+  // this way; reordering still needs a rebuild.
   if (typeof fetch === 'function' &&
       (location.protocol === 'http:' || location.protocol === 'https:')) {
-    fetch(CAPTIONS_URL, { cache: 'no-store' })
+    fetch(CONFIG_URL, { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) { if (d && typeof d === 'object') captions = d; })
+      .then(function (d) {
+        if (!d || typeof d !== 'object') return;
+        config = d;
+        captions = d.captions || {};
+        labels = labelsOf(d);
+      })
       .catch(function () {});
   }
 
@@ -358,10 +380,10 @@ LIGHTBOX_JS = """
     // this copy of the image has decoded.
     shot.width = img.naturalWidth || img.width;
     shot.height = img.naturalHeight || img.height;
-    kind.textContent = CATEGORY_LABELS[t] || t;
+    kind.textContent = labels[t] || t;
     title.textContent = data.title || n;
     write(text, note || 'No notes yet \u2014 add one under "' + t + '" \u2192 "'
-      + n + '" in captions.json');
+      + n + '" in config.json');
     text.classList.toggle('is-empty', !note);
 
     card.classList.remove('is-flipped');
@@ -637,35 +659,35 @@ def copyright_args(parser: argparse.ArgumentParser) -> None:
                         help="usage line under the notice; empty omits it")
 
 
-def load_labels(path: Path, kinds: list[str]) -> dict:
-    """Read the folder -> display name map, adding any category not yet listed.
+def titleize(kind: str) -> str:
+    return kind.replace("-", " ").replace("_", " ").title()
 
-    Folder names stay the stable identity -- they key captions.json and the
-    Image--<kind> classes -- while these labels are only what a reader sees.
+
+def sections_of(config: dict) -> list[tuple[str, str]]:
+    """Read the "sections" array as ordered (folder, display name) pairs.
+
+    Position in the array is what orders the page. An entry may be the bare
+    folder name when the titleized folder is label enough, or an object when
+    the two differ.
     """
-    data = {}
-    if path.exists():
-        try:
-            loaded = json.loads(path.read_text(encoding="utf-8"))
-            if isinstance(loaded, dict):
-                data = {k: str(v) for k, v in loaded.items() if isinstance(v, str)}
-            else:
-                print(f"{path}: expected an object at the top level", file=sys.stderr)
-        except json.JSONDecodeError as exc:
-            print(f"{path}: invalid JSON ({exc}); starting fresh", file=sys.stderr)
+    listed = config.get("sections")
+    if not isinstance(listed, list):   # a bare string would iterate per-character
+        return []
 
-    # Key order here is the order sections appear, so new categories are
-    # appended rather than sorted into place.
-    added = 0
-    for kind in [FAVORITES] + list(kinds):
-        if kind not in data:
-            data[kind] = kind.replace("-", " ").replace("_", " ").title()
-            added += 1
-    if added or not path.exists():
-        path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n",
-                        encoding="utf-8")
-        print(f"{path}: added {added} category label(s)")
-    return data
+    out: list[tuple[str, str]] = []
+    seen = set()
+    for item in listed:
+        if isinstance(item, str):
+            kind, label = item, ""
+        elif isinstance(item, dict):
+            kind, label = str(item.get("id") or ""), str(item.get("label") or "")
+        else:
+            continue
+        if not kind or kind in seen:
+            continue
+        seen.add(kind)
+        out.append((kind, label or titleize(kind)))
+    return out
 
 
 def entry(value) -> dict:
@@ -687,41 +709,71 @@ def entry(value) -> dict:
     return {"title": "", "caption": "", "favorite": False}
 
 
-def load_captions(path: Path, items: list[dict]) -> dict:
-    """Read the type -> photo name -> entry map, adding a blank slot per image.
+def load_config(path: Path, items: list[dict], kinds: list[str]) -> dict:
+    """Read config.json: section order and labels, plus per-photo captions.
 
-    Returns the file's own shape, untouched -- new photos get the "" shorthand
-    so the file stays uncluttered, and anything already written keeps the form
-    the author chose.
+    The file grows with the media tree -- a category missing from "sections" is
+    appended and every new photo gets a blank caption slot -- but nothing
+    already written is rewritten, so hand-chosen order, labels, and the
+    shorthand entry forms all survive a rebuild.
     """
-    data = {}
+    data: dict = {}
     if path.exists():
+        loaded = None
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
+            loaded = json.loads(path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
             print(f"{path}: invalid JSON ({exc}); starting fresh", file=sys.stderr)
-            data = {}
-        if not isinstance(data, dict):
+        if isinstance(loaded, dict):
+            data = loaded
+        elif loaded is not None:
             print(f"{path}: expected an object at the top level", file=sys.stderr)
-            data = {}
 
-    added = 0
+    sections = data.get("sections")
+    if not isinstance(sections, list):
+        if sections is not None:
+            print(f"{path}: 'sections' is not an array; replacing", file=sys.stderr)
+        sections = []
+    captions = data.get("captions")
+    if not isinstance(captions, dict):
+        if captions is not None:
+            print(f"{path}: 'captions' is not an object; replacing", file=sys.stderr)
+        captions = {}
+
+    # Appended rather than sorted in: array position is the section order, so
+    # an unlisted category lands at the end for the author to move.
+    listed = {k for k, _ in sections_of({"sections": sections})}
+    new_sections = 0
+    for kind in [FAVORITES] + list(kinds):
+        if kind not in listed:
+            sections.append({"id": kind, "label": titleize(kind)})
+            listed.add(kind)
+            new_sections += 1
+
+    new_slots = 0
     for item in items:
-        bucket = data.setdefault(item["kind"], {})
+        bucket = captions.setdefault(item["kind"], {})
         if not isinstance(bucket, dict):
-            print(f"{path}: {item['kind']!r} is not an object; skipping",
+            print(f"{path}: captions.{item['kind']!r} is not an object; skipping",
                   file=sys.stderr)
             continue
         if item["name"] not in bucket:
             bucket[item["name"]] = ""
-            added += 1
+            new_slots += 1
 
-    if added or not path.exists():
-        ordered = {k: dict(sorted(v.items())) for k, v in sorted(data.items())
-                   if isinstance(v, dict)}
-        path.write_text(json.dumps(ordered, indent=2, ensure_ascii=False) + "\n",
+    data["sections"] = sections
+    data["captions"] = captions
+    if new_sections or new_slots or not path.exists():
+        # Only the captions are sorted; the section array carries its meaning
+        # in its order.
+        written = dict(data)
+        written["captions"] = {k: dict(sorted(v.items()))
+                               for k, v in sorted(captions.items())
+                               if isinstance(v, dict)}
+        path.write_text(json.dumps(written, indent=2, ensure_ascii=False) + "\n",
                         encoding="utf-8")
-        print(f"{path}: added {added} blank caption slot(s)")
+        print(f"{path}: added {new_sections} section(s), "
+              f"{new_slots} blank caption slot(s)")
     return data
 
 
@@ -770,8 +822,8 @@ def apply_captions(items: list[dict], captions: dict) -> None:
         item["favorite"] = data["favorite"]
 
 
-def render(groups: list[tuple[str, list[dict]]], title: str, captions: dict,
-           captions_href: str, labels: dict, index_href: str = "",
+def render(groups: list[tuple[str, list[dict]]], title: str, config: dict,
+           config_href: str, labels: dict, index_href: str = "",
            notice: str = "") -> str:
     items = [i for _, group in groups for i in group]
     shapes = sorted({i["shape"] for i in items})
@@ -832,9 +884,8 @@ def render(groups: list[tuple[str, list[dict]]], title: str, captions: dict,
             if index_href else "")
 
     # "<" is escaped so the payload can never close its own <script> tag.
-    captions_json = json.dumps(captions, ensure_ascii=False).replace("<", "\\u003c")
-    captions_url = json.dumps(captions_href)
-    labels_json = json.dumps(labels, ensure_ascii=False).replace("<", "\\u003c")
+    config_json = json.dumps(config, ensure_ascii=False).replace("<", "\\u003c")
+    config_url = json.dumps(config_href)
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -930,9 +981,8 @@ header p {{ margin: 0; color: #8b8b8b; font-size: 0.8rem; }}
   </div>
 </div>
 
-<script type="application/json" id="captions-data">{captions_json}</script>
-<script>var CAPTIONS_URL = {captions_url};
-var CATEGORY_LABELS = {labels_json};{LIGHTBOX_JS}</script>
+<script type="application/json" id="config-data">{config_json}</script>
+<script>var CONFIG_URL = {config_url};{LIGHTBOX_JS}</script>
 </body>
 </html>
 """
@@ -947,9 +997,8 @@ def main() -> int:
     parser.add_argument("--max-span", type=int, default=5)
     parser.add_argument("--iters", type=int, default=6000, help="packing search steps")
     parser.add_argument("--seed", type=int, default=11)
-    parser.add_argument("--captions", type=Path, default=Path("captions.json"))
-    parser.add_argument("--categories", type=Path, default=Path("categories.json"),
-                        help="folder -> display name map for section headers")
+    parser.add_argument("--config", type=Path, default=Path("config.json"),
+                        help="section order and labels, plus per-photo captions")
     parser.add_argument("--registry", type=Path, default=Path("galleries.json"),
                         help="shared list of galleries the index page renders")
     parser.add_argument("--no-registry", action="store_true")
@@ -971,20 +1020,22 @@ def main() -> int:
         print(f"no images found under {args.media}", file=sys.stderr)
         return 1
 
-    captions = load_captions(args.captions, items)
+    kinds = sorted({i["kind"] for i in items})
+    config = load_config(args.config, items, kinds)
+    captions = config["captions"]
     apply_captions(items, captions)
 
-    kinds = sorted({i["kind"] for i in items})
-    labels = load_labels(args.categories, kinds)
+    order = sections_of(config)
+    labels = dict(order)
     if FAVORITES in kinds:
         print(f"warning: a media folder named {FAVORITES!r} collides with the "
               f"favorites section", file=sys.stderr)
 
     weights = [(n, 3.0 if i == 0 else 1.0) for i, (_, n) in enumerate(TIERS)]
 
-    # Section order comes from the order of keys in categories.json; anything
-    # not listed there falls in after, alphabetically.
-    rank = {k: i for i, k in enumerate(labels)}
+    # Section order is the "sections" array in config.json; anything missing
+    # from it falls in after, alphabetically.
+    rank = {k: i for i, (k, _) in enumerate(order)}
     picks = [i for i in items if i["favorite"]]
     buckets = {k: [i for i in items if i["kind"] == k] for k in kinds}
     if picks:
@@ -1000,7 +1051,7 @@ def main() -> int:
         groups.append((label, group, before, score(group, weights), how))
 
     href = quote(
-        Path(os.path.relpath(args.captions.resolve(), out.parent)).as_posix()
+        Path(os.path.relpath(args.config.resolve(), out.parent)).as_posix()
     )
     index_href = ""
     if not args.no_index_link:
@@ -1009,7 +1060,7 @@ def main() -> int:
         )
 
     out.write_text(
-        render([(k, g) for k, g, _, _, _ in groups], args.title, captions, href,
+        render([(k, g) for k, g, _, _, _ in groups], args.title, config, href,
                labels, index_href,
                footer(args.copyright, args.year, args.terms)),
         encoding="utf-8",

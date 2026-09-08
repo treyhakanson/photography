@@ -11,3 +11,6 @@ media/
 
 # Virtual environments
 .venv
+
+# Miscellaneous
+.DS_Store
