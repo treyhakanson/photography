@@ -41,7 +41,6 @@ export type Copyright = {
 };
 
 export type Manifest = {
-  generated: string;
   siteTitle: string;
   copyright: Copyright;
   galleries: Gallery[];

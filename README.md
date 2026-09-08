@@ -28,6 +28,7 @@ npm run build    # -> dist/
 | `src/` | The app. |
 | `src/data/` | **Generated**: `manifest.json` and `spans.css`. Committed, but never hand-edited. |
 | `deploy/` | A GitHub Pages workflow, inactive until you copy it into `.github/workflows/`. |
+| `LICENSE` / `LICENSE-MEDIA` | MIT for the code, all-rights-reserved for the photos. See [Licensing](#licensing). |
 
 Images are referenced from `media/` by relative path; they are not copied or
 rewritten until a production build, which copies them into `dist/media/`.
@@ -393,19 +394,36 @@ the packing order actually changed.
 
 ---
 
-## Copyright
+## Licensing
 
-The footer notice is rendered from `site.config.json`. It is not what creates
-the copyright — that is automatic — but it rebuts an "innocent infringement"
-defense and deters casual reuse.
+The repository is deliberately split in two.
 
-Two things worth doing before publishing photos you care about:
+| Covers | Licence |
+| --- | --- |
+| **Code** — `src/`, `scripts/`, `plugins/`, stylesheets, config | [MIT](LICENSE) |
+| **Photographs** — `media/`, `raw_media/`, and the copies in any build output | [All rights reserved](LICENSE-MEDIA) — personal viewing only; no commercial use, redistribution, derivative works, or ML training without permission |
 
-- **Embed IPTC/XMP rights metadata** in the JPEGs. Unlike the footer, it travels
-  with a downloaded file.
-- **Add a `LICENSE`.** A repo with none is "all rights reserved", which is the
-  strict default you want for the photos — but if you license the *code*, scope
-  that license explicitly to the code so it cannot be read as covering `media/`.
+Each file states its scope explicitly, because a lone root `LICENSE` is
+conventionally read as covering the whole repository. Dropping a bare MIT file
+in here would have handed away commercial rights to all 54 photographs.
+
+Three separate layers assert the photo terms, because each reaches somewhere
+the others don't:
+
+- **The page footer**, rendered from `site.config.json`. It is not what creates
+  the copyright — that is automatic — but it rebuts an "innocent infringement"
+  defence and deters casual reuse.
+- **EXIF `Copyright` and `Artist`**, written into every derived photo by
+  `npm run downsize`. Unlike the footer, these travel with a downloaded file.
+- **`LICENSE-MEDIA`**, which is what someone actually reads before reusing
+  something.
+
+One thing no licence can change: making the repository public grants every
+GitHub user the right to fork it, per GitHub's Terms of Service. That is the
+reason `media/` holds 2560px JPEGs and `raw_media/` is gitignored — a fork gets
+web-sized images, never print-resolution originals.
+
+*None of this is legal advice.*
 
 ---
 

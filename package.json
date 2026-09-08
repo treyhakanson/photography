@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Static photo galleries, generated from a media/ tree and a config.json.",
+  "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "manifest": "tsx scripts/build-manifest.ts",
     "dev": "npm run manifest && vite",

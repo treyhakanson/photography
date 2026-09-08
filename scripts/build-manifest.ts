@@ -291,7 +291,6 @@ async function main() {
   }
 
   const manifest: Manifest = {
-    generated: new Date().toISOString(),
     siteTitle: site.siteTitle,
     copyright: site.copyright,
     galleries,
