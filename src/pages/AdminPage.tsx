@@ -9,7 +9,7 @@
  * and this route is not mounted in a production build.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { NotFound } from "../components/NotFound";
 import { asset, galleries, galleryBySlug } from "../lib/manifest";
 import type { Photo } from "../types";
@@ -106,6 +106,7 @@ function fill(captions: Captions | undefined, photos: Photo[]): Record<string, E
 
 export function AdminPage() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const gallery = galleryBySlug(slug) ?? galleries[0];
 
   const groups = useMemo(
@@ -290,6 +291,21 @@ export function AdminPage() {
           <b>{photos.length}</b> photos · <b>{favorites}</b> favorites ·{" "}
           <b>{changed.length}</b> unsaved
         </span>
+        {galleries.length > 1 ? (
+          <label className="Picker">
+            Gallery{" "}
+            <select
+              value={gallery.slug}
+              onChange={(e) => navigate(`/admin/${e.target.value}`)}
+            >
+              {galleries.map((g) => (
+                <option key={g.slug} value={g.slug}>
+                  {g.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <span className="Hint">
           <Link className="Backlink" to={`/${gallery.slug}`}>
             <span aria-hidden="true">←</span> {gallery.title}

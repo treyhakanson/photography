@@ -1,0 +1,67 @@
+{
+  "title": "Tokyo & Kyoto 2025",
+  "date": "2025-11",
+  "raw": "./raw_media/jp-2025",
+  "media": "./media/jp-2025",
+  "cover": "temple/Kamakura-Daibutsu",
+  "sections": [
+    "favorites",
+    {
+      "id": "temple",
+      "label": "Temples"
+    },
+    {
+      "id": "elem",
+      "label": "Things"
+    },
+    {
+      "id": "nature",
+      "label": "Nature"
+    },
+    {
+      "id": "colors",
+      "label": "Colors"
+    },
+    {
+      "id": "random",
+      "label": "Random"
+    }
+  ],
+  "captions": {
+    "colors": {
+      "KIRIN": "",
+      "Truck": "",
+      "Yearning": ""
+    },
+    "elem": {
+      "Flute-Pimp": "",
+      "Fresh-County": "",
+      "Spooky-Grate": "",
+      "Tokyo-Hotel": "",
+      "Windows": ""
+    },
+    "nature": {
+      "Big-Stepper": {
+        "favorite": true
+      },
+      "Flower": "",
+      "Marsh": ""
+    },
+    "random": {
+      "Smokin-and-Drinkin": ""
+    },
+    "temple": {
+      "Kamakura-Daibutsu": {
+        "favorite": true
+      },
+      "Kamakura-Daibutsu--Zoomed": "",
+      "Rain-Temple": "",
+      "Rain-Temple--Zoomed": "",
+      "Spirit-Cat": "",
+      "Temple-Gate": "",
+      "Tiny-Torii": {
+        "favorite": true
+      }
+    }
+  }
+}

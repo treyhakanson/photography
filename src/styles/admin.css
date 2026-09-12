@@ -35,6 +35,19 @@
 .Status b { color: var(--ink); font-weight: 600; }
 .Hint { margin-left: auto; color: #61616c; font-size: 0.78rem; }
 
+/* Only rendered when there is more than one gallery to switch between. */
+.Picker { color: var(--muted); font-size: 0.85rem; }
+.Picker select {
+  margin-left: 0.35rem;
+  padding: 0.25rem 0.4rem;
+  color: var(--ink);
+  font: inherit;
+  background: #131317;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+.Picker select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
 .AdminPage main { padding: 1.25rem 1rem 4rem; }
 .Group { margin: 0 0 2rem; }
 .Group-name {

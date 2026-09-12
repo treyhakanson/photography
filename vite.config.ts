@@ -1,25 +1,25 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { configApi, media, spaFallback } from "./plugins/index.ts";
-import type { SiteConfig } from "./src/types.ts";
+import { loadGalleries, loadSite } from "./scripts/galleries.ts";
 
 const APP = import.meta.dirname;
 
-/**
- * One source of truth for the base path, the galleries, and where their photos
- * live -- the build script reads the same file.
- */
-const site = JSON.parse(
-  readFileSync(resolve(APP, "site.config.json"), "utf8"),
-) as SiteConfig;
+// The same discovery the build scripts use, so the dev server serves exactly
+// the galleries that config/ declares.
+const site = loadSite(APP);
+const galleries = loadGalleries(APP, site);
 
 export default defineConfig({
   // Deployed under treyhakanson.github.io/photography, so every asset URL and
   // the router's basename hang off this.
   base: site.base,
-  plugins: [react(), media(site, APP), configApi(site, APP), spaFallback(APP)],
+  plugins: [
+    react(),
+    media(site, galleries, APP),
+    configApi(site, galleries),
+    spaFallback(APP),
+  ],
   build: {
     outDir: "dist",
     emptyOutDir: true,

@@ -11,7 +11,20 @@ import { join, resolve, relative, extname, dirname } from "node:path";
 import { imageSize } from "./imageSize";
 import { TIERS, bestOrder, fillRate, narrow, score, spans } from "./layout";
 import type { Shape, Weight } from "./layout";
-import type { Gallery, Manifest, Photo, Section, SiteConfig } from "../src/types";
+import {
+  loadGalleries,
+  loadSite,
+  orphanedCaptions,
+  pickCover,
+} from "./galleries.ts";
+import type {
+  Gallery,
+  GallerySpec,
+  Manifest,
+  Photo,
+  Section,
+  SiteConfig,
+} from "../src/types";
 
 const HERE = import.meta.dirname;
 const APP = resolve(HERE, "..");
@@ -157,21 +170,116 @@ function finish(item: Item): Photo {
   return { ...rest, cols: shape[0], rows: shape[1] };
 }
 
+/**
+ * Add to a gallery's config what its photos imply, and nothing else: a section
+ * entry per new category, a blank caption slot per new photo. This is what
+ * makes a config file worth hand-editing -- the keys are already there.
+ *
+ * Existing entries keep whatever form the author chose, and the section array
+ * is never resorted, because position in it is the section order. The file is
+ * only rewritten when something was actually added, so a no-op build leaves it
+ * byte-identical.
+ */
+async function scaffold(
+  spec: GallerySpec,
+  items: Item[],
+  config: Record<string, unknown>,
+): Promise<number> {
+  const sections: unknown[] = Array.isArray(config.sections) ? config.sections : [];
+  const captions =
+    config.captions && typeof config.captions === "object" && !Array.isArray(config.captions)
+      ? (config.captions as Record<string, Record<string, unknown>>)
+      : {};
+
+  const listed = new Set(sectionsOf({ sections }).map(([id]) => id));
+  const kinds = [...new Set(items.map((i) => i.kind))].sort();
+  let added = 0;
+
+  // Appended rather than sorted in: a new category lands at the end for the
+  // author to move where they want it.
+  for (const kind of [FAVORITES, ...kinds]) {
+    if (listed.has(kind)) continue;
+    sections.push({ id: kind, label: titleize(kind) });
+    listed.add(kind);
+    added++;
+  }
+
+  for (const item of items) {
+    const bucket = (captions[item.kind] ??= {});
+    if (!(item.name in bucket)) {
+      bucket[item.name] = "";
+      added++;
+    }
+  }
+
+  // Drop entries whose photo is gone, but only the empty ones.
+  const { drop, keep } = orphanedCaptions(new Set(items.map((i) => i.id)), captions);
+  for (const [group, name] of drop) {
+    delete captions[group][name];
+    added++;
+  }
+  for (const group of Object.keys(captions)) {
+    if (!Object.keys(captions[group]).length) delete captions[group];
+  }
+  if (keep.length) {
+    console.warn(
+      `  ${relative(APP, spec.configPath)}: ${keep.length} caption(s) with no ` +
+        `photo, kept: ${keep.join(", ")}`,
+    );
+  }
+
+  if (!added) return 0;
+
+  config.sections = sections;
+  // Only the captions are sorted; the section array carries its meaning in its
+  // order. Sorting matches what the caption editor writes, so a hand-edit and
+  // an editor save produce the same shape.
+  config.captions = Object.fromEntries(
+    Object.keys(captions)
+      .sort()
+      .map((group) => [
+        group,
+        Object.fromEntries(
+          Object.keys(captions[group])
+            .sort()
+            .map((name) => [name, captions[group][name]]),
+        ),
+      ]),
+  );
+  await writeFile(spec.configPath, JSON.stringify(config, null, 2) + "\n", "utf8");
+  return added;
+}
+
+/**
+ * Build one gallery, or return null when it has no photos yet. A config file
+ * can legitimately exist before its photos do, and that should not fail the
+ * whole build -- the gallery appears on its own once there is something to show.
+ */
 async function buildGallery(
-  spec: SiteConfig["galleries"][number],
+  spec: GallerySpec,
   layout: SiteConfig["layout"],
-): Promise<{ gallery: Gallery; shapes: Shape[] }> {
+): Promise<{ gallery: Gallery; shapes: Shape[] } | null> {
   const mediaDir = resolve(APP, spec.media);
-  const configPath = resolve(APP, spec.config);
 
-  const items = await collect(mediaDir, spec.slug, layout);
-  if (!items.length) throw new Error(`no images found under ${mediaDir}`);
+  const items = await collect(mediaDir, spec.slug, layout).catch(() => []);
+  if (!items.length) {
+    console.warn(
+      `\n${spec.title}: no photos under ${spec.media} yet -- skipping.\n` +
+        `  add originals to ${spec.raw}, then run \`npm run downsize\`.`,
+    );
+    return null;
+  }
 
-  const config = JSON.parse(await readFile(configPath, "utf8")) as unknown;
-  const captions = ((config as { captions?: unknown }).captions ?? {}) as Record<
+  const config = JSON.parse(await readFile(spec.configPath, "utf8")) as Record<
     string,
-    Record<string, unknown>
+    unknown
   >;
+  const added = await scaffold(spec, items, config);
+  if (added) {
+    console.log(`  ${relative(APP, spec.configPath)}: added ${added} entry/ies`);
+  }
+
+  const captions = (config.captions ?? {}) as Record<string, Record<string, unknown>>;
 
   for (const item of items) {
     const data = entry(captions[item.kind]?.[item.name]);
@@ -222,7 +330,13 @@ async function buildGallery(
     sections.push({ id, label: labels.get(id) ?? titleize(id), photos: packed.map(finish) });
   }
 
-  const cover = picks[0] ?? items[0];
+  const { photo: cover, missing } = pickCover(items, spec.cover);
+  if (missing) {
+    console.warn(
+      `  ${relative(APP, spec.configPath)}: cover "${spec.cover}" matches no ` +
+        `photo -- falling back to ${cover ? cover.id : "nothing"}`,
+    );
+  }
   const newest = Math.max(...items.map((i) => i.mtime));
 
   return {
@@ -278,14 +392,14 @@ function spansCss(shapes: Shape[]): string {
 }
 
 async function main() {
-  const site = JSON.parse(
-    await readFile(join(APP, "site.config.json"), "utf8"),
-  ) as SiteConfig;
+  const site = loadSite(APP);
+  const specs = loadGalleries(APP, site);
 
   const galleries: Gallery[] = [];
   const shapes: Shape[] = [];
-  for (const spec of site.galleries) {
+  for (const spec of specs) {
     const built = await buildGallery(spec, site.layout);
+    if (!built) continue;
     galleries.push(built.gallery);
     shapes.push(...built.shapes);
   }
@@ -304,8 +418,11 @@ async function main() {
   await writeFile(join(OUT_DIR, "spans.css"), spansCss(shapes));
 
   const photos = galleries.reduce((n, g) => n + g.photoCount, 0);
+  const pending = specs.length - galleries.length;
   console.log(
-    `\nwrote src/data/manifest.json (${galleries.length} gallery/ies, ${photos} photos)`,
+    `\nwrote src/data/manifest.json (${galleries.length} of ${specs.length} ` +
+      `gallery/ies, ${photos} photos` +
+      `${pending ? `, ${pending} awaiting photos` : ""})`,
   );
   console.log("wrote src/data/spans.css");
 }

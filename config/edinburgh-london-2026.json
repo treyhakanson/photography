@@ -1,4 +1,8 @@
 {
+  "title": "Edinburgh & London 2026",
+  "date": "2026-08",
+  "raw": "./raw_media/uk-2026",
+  "media": "./media/uk-2026",
   "sections": [
     {
       "id": "favorites",

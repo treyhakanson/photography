@@ -13,6 +13,8 @@ export type Active = {
   /** The tile the photo flew out of; also where it flies back to. */
   el: HTMLElement;
   label: string;
+  /** Names the file to edit in the empty-caption hint. */
+  slug: string;
 };
 
 type Props = {
@@ -219,7 +221,10 @@ export function Lightbox({ active, onClose }: Props) {
 
   const { photo, label } = active;
   const note = photo.caption;
-  const hint = `No notes yet — add one under "${photo.kind}" → "${photo.name}" in config.json`;
+  // Name the actual file, since each gallery has its own.
+  const hint =
+    `No notes yet — add one under "${photo.kind}" → "${photo.name}" ` +
+    `in config/${active.slug}.json`;
 
   return (
     <div

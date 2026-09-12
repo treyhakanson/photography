@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import { IndexPage } from "../pages/IndexPage.tsx";
-import { galleries, manifest } from "../lib/manifest.ts";
+import { asset, galleries, manifest } from "../lib/manifest.ts";
 
 const show = () =>
   render(
@@ -40,6 +40,14 @@ describe("index page", () => {
     const gallery = galleries[0];
     const want = gallery.sections.filter((s) => s.id !== "favorites").map((s) => s.label);
     expect(document.querySelector(".GalleryCard-sections")!.textContent).toBe(want.join(" · "));
+  });
+
+  it("renders the cover the manifest chose, per gallery", () => {
+    show();
+    const covers = [...document.querySelectorAll(".GalleryCard-cover")].map((el) =>
+      el.getAttribute("src"),
+    );
+    expect(covers).toEqual(galleries.map((g) => asset(g.cover!.src)));
   });
 
   it("gives the cover a fixed aspect so cards line up", () => {

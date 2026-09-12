@@ -9,7 +9,7 @@ Deploys to GitHub Pages under `/photography`.
 ```sh
 npm install
 npm run dev      # http://localhost:5173/photography/
-npm test         # 81 tests
+npm test         # 115 tests
 npm run build    # -> dist/
 ```
 
@@ -21,8 +21,8 @@ npm run build    # -> dist/
 | --- | --- |
 | `raw_media/<gallery>/` | Full-resolution originals. **Gitignored** — only `npm run downsize` reads them. |
 | `media/<gallery>/` | Web-sized photos derived from `raw_media/`, and committed. Inside each gallery, **one folder per category** — that folder name becomes the section. |
-| `config.json` | Section order, section labels, and every photo's title, caption and favorite flag. Hand-edited, or edited through the caption editor. |
-| `site.config.json` | Which galleries exist, the base path, copyright, and the layout knobs. |
+| `config/` | **One file per gallery.** Each holds that gallery's title, photo folders, section order, and captions. The filename is the gallery's slug. |
+| `site.config.json` | Site-wide only: title, base path, copyright, and the layout and derive knobs. |
 | `scripts/` | Build-time only: image dimensions, grid packing, manifest generation. |
 | `plugins/` | Vite plugins: serving `media/`, the SPA 404 fallback, the dev write endpoint. |
 | `src/` | The app. |
@@ -43,25 +43,61 @@ npm run downsize   # raw_media/ -> media/
 npm run manifest   # or just `npm run dev`, which does it first
 ```
 
-A new folder becomes a new section, appended to the end of `config.json`'s
+A new folder becomes a new section, appended to the end of that gallery's
 `sections` array for you to move; new files get blank caption slots.
 
 ---
 
-## `config.json`
+## `config/` — one file per gallery
 
-Everything the build reads that isn't an image: what order the sections go in,
-what they are called, and what each photo says.
+Every `*.json` in this directory is a gallery, and **the filename is its slug**
+— the URL segment, and the folder its photos are published under. Adding a
+gallery means adding a file; nothing else registers it.
+
+```
+config/
+  edinburgh-london-2026.json   ->  /photography/edinburgh-london-2026
+  tokyo-kyoto-2025.json        ->  /photography/tokyo-kyoto-2025
+```
 
 ```jsonc
 {
+  "title": "Tokyo & Kyoto 2025",
+  "date": "2025-11",                 // optional; orders the index, newest first
+  "raw": "./raw_media/uk-2026",      // optional; defaults to ./raw_media/<slug>
+  "media": "./media/uk-2026",        // optional; defaults to ./media/<slug>
+  "cover": "temple/Kamakura-Daibutsu",  // optional; the index card's photo
   "sections": [ /* order and labels */ ],
   "captions":  { /* category -> photo name -> entry */ }
 }
 ```
 
-Both keys are created if missing. Anything else in the file is left alone and
-carried through edits, so you can park your own notes in it.
+| Field | Effect |
+| --- | --- |
+| `title` | Heading, and the name on the index card. Defaults to the slug. |
+| `date` | Sorts the index, newest first. Undated galleries sort last, by slug. Not displayed. |
+| `raw` / `media` | Where the photos live. Omit them when the folders are named after the slug. |
+| `cover` | Which photo represents the gallery on the index, as `<category>/<name>` — the folder it is in, then its filename without the extension. Omit it and the first favorite is used, or the first photo if nothing is favorited. A value that matches no photo warns during the build and falls back the same way. |
+| `sections` | Section order and labels — see below. |
+| `captions` | Per-photo title, caption and favorite flag — see below. |
+
+`sections` and `captions` are created if missing, and the build keeps them in
+step with the photos: a new category folder is appended to `sections`, and a new
+photo gets a blank caption slot. Nothing already written is rewritten, the
+section order is never resorted, and the file is only touched when something was
+actually added. Anything else in the file is left alone and carried through
+edits, so you can park your own notes in it.
+
+### A gallery before its photos
+
+A config file may exist before there are any photos for it. The build says so
+and moves on, and the gallery stays off the index until there is something to
+show:
+
+```
+Tokyo & Kyoto 2025: no photos under ./media/tokyo-kyoto-2025 yet -- skipping.
+  add originals to ./raw_media/tokyo-kyoto-2025, then run `npm run downsize`.
+```
 
 ### `sections`
 
@@ -121,7 +157,9 @@ Rules the build follows:
 - **Existing entries are never rewritten.** Your chosen form is preserved —
   `{"favorite": true}` is not expanded with empty `title`/`caption` keys — and
   the `sections` array is never resorted.
-- **Deleting a photo leaves its entry behind.** Harmless; prune by hand if you like.
+- **Deleting a photo drops its entry, but only if it was blank.** An entry you
+  had written something in is kept and reported instead — a photo may only have
+  been renamed, and losing a caption over that would be worse than a stale key.
 
 Newlines in a caption are preserved (`white-space: pre-wrap`).
 
@@ -144,7 +182,7 @@ markup. Titles do not parse markdown.
 
 > **Note:** macOS Finder comments are *not* a caption source. They live in an
 > extended attribute, not in the image file, and are stripped by git, copies,
-> and uploads. Put text in `config.json`.
+> and uploads. Put text in the gallery's config file.
 
 ---
 
@@ -155,24 +193,16 @@ markup. Titles do not parse markdown.
   "siteTitle": "Galleries",
   "base": "/photography/",          // must match the repo name on Pages
   "copyright": { "holder": "...", "year": 2026, "terms": "..." },
+  "configDir": "./config",          // every *.json in here is a gallery
   "layout": { "area": 12, "minSpan": 2, "maxSpan": 5, "iters": 6000, "seed": 11 },
-  "derive": { "maxEdge": 2560, "quality": 82 },
-  "galleries": [
-    {
-      "slug": "edinburgh-london-2026",   // the URL segment
-      "title": "Edinburgh & London 2026",
-      "raw": "./raw_media/uk-2026",      // originals, gitignored
-      "media": "./media/uk-2026",        // derived, committed
-      "config": "./config.json"
-    }
-  ]
+  "derive": { "maxEdge": 2560, "quality": 82 }
 }
 ```
 
 | Field | Effect |
 | --- | --- |
 | `base` | Vite's base and the router's basename. Trailing slash required. |
-| `slug` | The URL segment, and the folder photos are served under (`media/<slug>/`). Independent of where they sit on disk. |
+| `configDir` | Where the per-gallery files live. Scanned on every build. |
 | `layout.area` | Target grid cells per photo. Lower means smaller tiles. |
 | `layout.minSpan` / `maxSpan` | Clamp on how many columns/rows a photo may span. |
 | `layout.iters` | Packing search budget for sections too large to search exactly. |
@@ -180,13 +210,17 @@ markup. Titles do not parse markdown.
 | `derive.maxEdge` | Cap on a derived photo's longest edge. Photos already smaller are re-encoded but not scaled. |
 | `derive.quality` | JPEG quality for derived photos. |
 
-### Adding a second gallery
+### Adding a gallery
 
-Add an entry with its own `slug`, `raw`, `media` and `config`, then rebuild. It gets
-its own route and a card on the index.
+1. Add `config/<slug>.json` with at least a `title`.
+2. Put the originals in `raw_media/<slug>/`, one folder per category.
+3. `npm run downsize && npm run manifest`.
 
-Photos are served under `media/<slug>/`, which is derived from the slug rather
-than the folder on disk — so `media/uk-2026/` is published as
+It gets its own route, its own card on the index, and its own tab in the caption
+editor. There is no list to update — the build scans `config/`.
+
+Photos are served under `media/<slug>/`, derived from the slug rather than the
+folder on disk, so `media/uk-2026/` is published as
 `media/edinburgh-london-2026/`. Two galleries therefore can't collide even if
 their source folders are named alike.
 
@@ -195,8 +229,9 @@ their source folders are named alike.
 ## The caption editor
 
 `http://localhost:5173/photography/admin` — a thumbnail per photo with fields
-for title, caption and favorite, and a Save button that overwrites `config.json`
-in place.
+for title, caption and favorite, and a Save button that overwrites that
+gallery's config file in place. With more than one gallery, a picker in the bar
+switches between them (or go straight to `/admin/<slug>`).
 
 A browser cannot write to disk, so Save posts to the Vite dev server, which does
 the writing (`plugins/index.ts`).
@@ -204,8 +239,8 @@ the writing (`plugins/index.ts`).
 - Only captions are editable. Save is a whole-file overwrite, so `sections` and
   anything else in the file is carried through from the copy last read off disk
   — a section order you edited by hand is not undone by saving captions.
-- The page reads `config.json` on load, so it reflects hand-edits made since the
-  manifest was generated.
+- The page reads the config file on load, so it reflects hand-edits made since
+  the manifest was generated.
 - Because Save rewrites the whole file, it re-checks disk first: if the file
   changed underneath you, the first Save is refused with a warning and a second
   click overwrites deliberately.
@@ -228,6 +263,13 @@ npm run downsize -- --force # re-derive everything
 
 Re-runs are incremental: a photo is rebuilt only when its original is newer than
 the output, or when `derive.maxEdge` / `derive.quality` changed.
+
+`media/` is a function of `raw_media/`, not a pile that only grows, so a derived
+photo whose original has been renamed or deleted is pruned, and any category
+folder left empty goes with it. Without that a rename would show up in the
+gallery as two copies of the same photo. The one exception is an originals
+folder with no images in it at all — far more likely a mistake than an
+instruction to delete everything — which is reported and left alone.
 
 ### How the size was chosen
 
@@ -304,7 +346,7 @@ the narrowest tier every tile is refitted to a half row or a full one, because a
 Everything above happens at build time:
 
 ```
-media/  +  config.json
+media/  +  config/*.json
         │
         ▼  npm run manifest
         ▼
@@ -315,7 +357,7 @@ src/data/manifest.json  +  src/data/spans.css
 ```
 
 `npm run dev` and `npm run build` both regenerate the manifest first, so it
-cannot drift from `config.json`.
+cannot drift from `config/`.
 
 ---
 
@@ -379,7 +421,7 @@ the packing order actually changed.
 
 ## Tests
 
-81 tests, no browser required (jsdom).
+115 tests, no browser required (jsdom).
 
 | File | Covers |
 | --- | --- |
@@ -389,6 +431,8 @@ the packing order actually changed.
 | `index.test.tsx` | Gallery cards, counts, cover sizing, footer. |
 | `admin.test.tsx` | Serialization forms, section preservation, staleness, fallbacks. |
 | `validate.test.ts` | The dev write endpoint's input gate. |
+| `galleries.test.ts` | Discovery, cover selection, and which orphaned captions are safe to drop. |
+| `index-multi.test.tsx` | That the index renders one card per gallery, in manifest order. |
 | `css-scope.test.tsx` | That no two pages share a class name. Every stylesheet is loaded on every route, so a shared name silently restyles the other page. |
 
 ---

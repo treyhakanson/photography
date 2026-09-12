@@ -13,7 +13,7 @@ import { copyFile } from "node:fs/promises";
 import { basename, join, resolve, sep } from "node:path";
 import type { ServerResponse } from "node:http";
 import type { Plugin } from "vite";
-import type { SiteConfig } from "../src/types.ts";
+import type { GallerySpec, SiteConfig } from "../src/types.ts";
 
 const MIME: Record<string, string> = {
   ".jpg": "image/jpeg",
@@ -41,9 +41,13 @@ function send(res: ServerResponse, code: number, body: string) {
  * In dev they stream straight off disk; at build time they are copied into
  * dist/media/<slug>/ so the output folder is self-contained.
  */
-export function media(site: SiteConfig, appRoot: string): Plugin {
+export function media(
+  site: SiteConfig,
+  galleries: GallerySpec[],
+  appRoot: string,
+): Plugin {
   const dirs = new Map(
-    site.galleries.map((g) => [g.slug, resolve(appRoot, g.media)] as const),
+    galleries.map((g) => [g.slug, resolve(appRoot, g.media)] as const),
   );
   const prefix = `${site.base}media/`;
 
@@ -84,13 +88,33 @@ export function media(site: SiteConfig, appRoot: string): Plugin {
     async closeBundle() {
       if (this.environment?.config.command !== "build") return;
       const outDir = resolve(appRoot, "dist");
+      let copied = 0;
+      let pending = 0;
+
       for (const [slug, root] of dirs) {
+        // A gallery may be declared in config/ before its photos exist. The
+        // manifest skips it, so nothing links to it; the build must not fail
+        // over the missing folder either.
+        const exists = await stat(root).then(
+          (info) => info.isDirectory(),
+          () => false,
+        );
+        if (!exists) {
+          pending++;
+          this.warn?.(`${slug}: no photos at ${root} yet — nothing to copy`);
+          continue;
+        }
         await cp(root, join(outDir, "media", slug), {
           recursive: true,
           filter: (src) => !junk(src),
         });
+        copied++;
       }
-      this.info?.(`copied media for ${dirs.size} gallery/ies into dist/media/`);
+
+      this.info?.(
+        `copied media for ${copied} gallery/ies into dist/media/` +
+          (pending ? ` (${pending} awaiting photos)` : ""),
+      );
     },
   };
 }
@@ -171,10 +195,8 @@ const MAX_BODY = 4 * 1024 * 1024;
  * of a production build, and the only path it will ever write is the gallery's
  * own config.json.
  */
-export function configApi(site: SiteConfig, appRoot: string): Plugin {
-  const targets = new Map(
-    site.galleries.map((g) => [g.slug, resolve(appRoot, g.config)] as const),
-  );
+export function configApi(site: SiteConfig, galleries: GallerySpec[]): Plugin {
+  const targets = new Map(galleries.map((g) => [g.slug, g.configPath] as const));
   const prefix = `${site.base}api/config/`;
 
   return {

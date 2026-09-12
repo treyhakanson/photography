@@ -30,7 +30,12 @@ export function GalleryPage() {
   if (!gallery) return <NotFound what="gallery" />;
 
   const open = (photo: Photo, el: HTMLElement) =>
-    setActive({ photo, el, label: labels.get(photo.kind) ?? photo.kind });
+    setActive({
+      photo,
+      el,
+      label: labels.get(photo.kind) ?? photo.kind,
+      slug: gallery.slug,
+    });
 
   return (
     <div className="GalleryPage">

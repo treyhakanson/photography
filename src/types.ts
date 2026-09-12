@@ -50,6 +50,8 @@ export type SiteConfig = {
   siteTitle: string;
   /** Public path the site is served under, e.g. "/photography/". */
   base: string;
+  /** Directory of per-gallery config files; every *.json in it is a gallery. */
+  configDir: string;
   copyright: Copyright;
   layout: {
     area: number;
@@ -65,13 +67,24 @@ export type SiteConfig = {
     /** JPEG quality, 1-100. */
     quality: number;
   };
-  galleries: Array<{
-    slug: string;
-    title: string;
-    /** Full-resolution originals. Gitignored; only the derive step reads it. */
-    raw: string;
-    /** Web-sized photos, derived from `raw` and committed. */
-    media: string;
-    config: string;
-  }>;
+};
+
+/** One gallery, as discovered from a file in `configDir`. */
+export type GallerySpec = {
+  /** The config file's name without .json. Also the URL segment. */
+  slug: string;
+  title: string;
+  /** Optional, for ordering the index. Newest first; blank sorts last. */
+  date: string;
+  /** Full-resolution originals. Gitignored; only the derive step reads it. */
+  raw: string;
+  /** Web-sized photos, derived from `raw` and committed. */
+  media: string;
+  /**
+    * Which photo represents the gallery on the index, as "<category>/<name>".
+    * Blank means pick one: the first favorite, else the first photo.
+    */
+  cover: string;
+  /** Absolute path to the gallery's own config file. */
+  configPath: string;
 };

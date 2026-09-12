@@ -184,17 +184,6 @@ describe("lightbox", () => {
     expect(card.classList.contains("is-flipped")).toBe(true);
   });
 
-  it("shows a hint instead of an empty caption", async () => {
-    const blank = gallery.sections
-      .flatMap((s) => (s.id === FAVORITES ? [] : s.photos))
-      .find((p) => !p.caption);
-    if (!blank) return;
-    const box = await open(blank, blank.kind);
-    const text = box.querySelector(".Back-text")!;
-    expect(text.textContent).toContain("No notes yet");
-    expect(text.classList.contains("is-empty")).toBe(true);
-  });
-
   it("closes on the X, unlocking scroll and resetting the flip", async () => {
     const box = await open(captioned, captioned.kind);
     fireEvent.click(box.querySelector(".Card")!);
@@ -223,6 +212,34 @@ describe("lightbox", () => {
     await open(captioned, captioned.kind);
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() => expect(document.body.classList.contains("is-locked")).toBe(false));
+  });
+});
+
+describe("a photo with no caption yet", () => {
+  // Whichever gallery has one. Pinning this to galleries[0] made the test
+  // vacuous the moment that gallery was fully captioned.
+  const found = galleries
+    .map((g) => ({
+      gallery: g,
+      photo: g.sections
+        .flatMap((s) => (s.id === FAVORITES ? [] : s.photos))
+        .find((p) => !p.caption),
+    }))
+    .find((hit) => hit.photo);
+
+  it("has a gallery with an uncaptioned photo to test", () => {
+    expect(found).toBeDefined();
+  });
+
+  it("shows a hint naming that gallery's own config file", async () => {
+    const { gallery: g, photo } = found!;
+    show(g.slug);
+    const box = await open(photo!, photo!.kind);
+    const text = box.querySelector(".Back-text")!;
+    expect(text.textContent).toContain("No notes yet");
+    expect(text.textContent).toContain(`config/${g.slug}.json`);
+    expect(text.textContent).toContain(photo!.name);
+    expect(text.classList.contains("is-empty")).toBe(true);
   });
 });
 

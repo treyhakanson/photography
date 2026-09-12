@@ -896,6 +896,373 @@
           ]
         }
       ]
+    },
+    {
+      "slug": "tokyo-kyoto-2025",
+      "title": "Tokyo & Kyoto 2025",
+      "updated": "2026-09-12",
+      "photoCount": 19,
+      "categoryCount": 5,
+      "cover": {
+        "id": "temple/Kamakura-Daibutsu",
+        "kind": "temple",
+        "name": "Kamakura-Daibutsu",
+        "src": "media/tokyo-kyoto-2025/temple/Kamakura-Daibutsu.jpg",
+        "alt": "Kamakura Daibutsu",
+        "width": 1922,
+        "height": 2560,
+        "cols": 3,
+        "rows": 4,
+        "title": "",
+        "caption": "",
+        "favorite": true
+      },
+      "sections": [
+        {
+          "id": "favorites",
+          "label": "Favorites",
+          "photos": [
+            {
+              "id": "nature/Big-Stepper",
+              "kind": "nature",
+              "name": "Big-Stepper",
+              "src": "media/tokyo-kyoto-2025/nature/Big-Stepper.jpg",
+              "alt": "Big Stepper",
+              "width": 1922,
+              "height": 2560,
+              "cols": 3,
+              "rows": 4,
+              "title": "",
+              "caption": "",
+              "favorite": true
+            },
+            {
+              "id": "temple/Kamakura-Daibutsu",
+              "kind": "temple",
+              "name": "Kamakura-Daibutsu",
+              "src": "media/tokyo-kyoto-2025/temple/Kamakura-Daibutsu.jpg",
+              "alt": "Kamakura Daibutsu",
+              "width": 1922,
+              "height": 2560,
+              "cols": 3,
+              "rows": 4,
+              "title": "",
+              "caption": "",
+              "favorite": true
+            },
+            {
+              "id": "temple/Tiny-Torii",
+              "kind": "temple",
+              "name": "Tiny-Torii",
+              "src": "media/tokyo-kyoto-2025/temple/Tiny-Torii.jpg",
+              "alt": "Tiny Torii",
+              "width": 2560,
+              "height": 1922,
+              "cols": 4,
+              "rows": 3,
+              "title": "",
+              "caption": "",
+              "favorite": true
+            }
+          ]
+        },
+        {
+          "id": "temple",
+          "label": "Temples",
+          "photos": [
+            {
+              "id": "temple/Kamakura-Daibutsu--Zoomed",
+              "kind": "temple",
+              "name": "Kamakura-Daibutsu--Zoomed",
+              "src": "media/tokyo-kyoto-2025/temple/Kamakura-Daibutsu--Zoomed.jpg",
+              "alt": "Kamakura Daibutsu  Zoomed",
+              "width": 2560,
+              "height": 1922,
+              "cols": 4,
+              "rows": 3,
+              "title": "",
+              "caption": "",
+              "favorite": false
+            },
+            {
+              "id": "temple/Rain-Temple--Zoomed",
+              "kind": "temple",
+              "name": "Rain-Temple--Zoomed",
+              "src": "media/tokyo-kyoto-2025/temple/Rain-Temple--Zoomed.jpg",
+              "alt": "Rain Temple  Zoomed",
+              "width": 1174,
+              "height": 660,
+              "cols": 5,
+              "rows": 3,
+              "title": "",
+              "caption": "",
+              "favorite": false
+            },
+            {
+              "id": "temple/Kamakura-Daibutsu",
+              "kind": "temple",
+              "name": "Kamakura-Daibutsu",
+              "src": "media/tokyo-kyoto-2025/temple/Kamakura-Daibutsu.jpg",
+              "alt": "Kamakura Daibutsu",
+              "width": 1922,
+              "height": 2560,
+              "cols": 3,
+              "rows": 4,
+              "title": "",
+              "caption": "",
+              "favorite": true
+            },
+            {
+              "id": "temple/Rain-Temple",
+              "kind": "temple",
+              "name": "Rain-Temple",
+              "src": "media/tokyo-kyoto-2025/temple/Rain-Temple.jpg",
+              "alt": "Rain Temple",
+              "width": 1182,
+              "height": 665,
+              "cols": 5,
+              "rows": 3,
+              "title": "",
+              "caption": "",
+              "favorite": false
+            },
+            {
+              "id": "temple/Temple-Gate",
+              "kind": "temple",
+              "name": "Temple-Gate",
+              "src": "media/tokyo-kyoto-2025/temple/Temple-Gate.jpg",
+              "alt": "Temple Gate",
+              "width": 2560,
+              "height": 1922,
+              "cols": 4,
+              "rows": 3,
+              "title": "",
+              "caption": "",
+              "favorite": false
+            },
+            {
+              "id": "temple/Spirit-Cat",
+              "kind": "temple",
+              "name": "Spirit-Cat",
+              "src": "media/tokyo-kyoto-2025/temple/Spirit-Cat.jpg",
+              "alt": "Spirit Cat",
+              "width": 1922,
+              "height": 2560,
+              "cols": 3,
+              "rows": 4,
+              "title": "",
+              "caption": "",
+              "favorite": false
+            },
+            {
+              "id": "temple/Tiny-Torii",
+              "kind": "temple",
+              "name": "Tiny-Torii",
+              "src": "media/tokyo-kyoto-2025/temple/Tiny-Torii.jpg",
+              "alt": "Tiny Torii",
+              "width": 2560,
+              "height": 1922,
+              "cols": 4,
+              "rows": 3,
+              "title": "",
+              "caption": "",
+              "favorite": true
+            }
+          ]
+        },
+        {
+          "id": "elem",
+          "label": "Things",
+          "photos": [
+            {
+              "id": "elem/Flute-Pimp",
+              "kind": "elem",
+              "name": "Flute-Pimp",
+              "src": "media/tokyo-kyoto-2025/elem/Flute-Pimp.jpg",
+              "alt": "Flute Pimp",
+              "width": 1922,
+              "height": 2560,
+              "cols": 3,
+              "rows": 4,
+              "title": "",
+              "caption": "",
+              "favorite": false
+            },
+            {
+              "id": "elem/Fresh-County",
+              "kind": "elem",
+              "name": "Fresh-County",
+              "src": "media/tokyo-kyoto-2025/elem/Fresh-County.jpg",
+              "alt": "Fresh County",
+              "width": 1922,
+              "height": 2560,
+              "cols": 3,
+              "rows": 4,
+              "title": "",
+              "caption": "",
+              "favorite": false
+            },
+            {
+              "id": "elem/Spooky-Grate",
+              "kind": "elem",
+              "name": "Spooky-Grate",
+              "src": "media/tokyo-kyoto-2025/elem/Spooky-Grate.jpg",
+              "alt": "Spooky Grate",
+              "width": 886,
+              "height": 886,
+              "cols": 3,
+              "rows": 3,
+              "title": "",
+              "caption": "",
+              "favorite": false
+            },
+            {
+              "id": "elem/Tokyo-Hotel",
+              "kind": "elem",
+              "name": "Tokyo-Hotel",
+              "src": "media/tokyo-kyoto-2025/elem/Tokyo-Hotel.jpg",
+              "alt": "Tokyo Hotel",
+              "width": 1922,
+              "height": 2560,
+              "cols": 3,
+              "rows": 4,
+              "title": "",
+              "caption": "",
+              "favorite": false
+            },
+            {
+              "id": "elem/Windows",
+              "kind": "elem",
+              "name": "Windows",
+              "src": "media/tokyo-kyoto-2025/elem/Windows.jpg",
+              "alt": "Windows",
+              "width": 2560,
+              "height": 1922,
+              "cols": 4,
+              "rows": 3,
+              "title": "",
+              "caption": "",
+              "favorite": false
+            }
+          ]
+        },
+        {
+          "id": "nature",
+          "label": "Nature",
+          "photos": [
+            {
+              "id": "nature/Big-Stepper",
+              "kind": "nature",
+              "name": "Big-Stepper",
+              "src": "media/tokyo-kyoto-2025/nature/Big-Stepper.jpg",
+              "alt": "Big Stepper",
+              "width": 1922,
+              "height": 2560,
+              "cols": 3,
+              "rows": 4,
+              "title": "",
+              "caption": "",
+              "favorite": true
+            },
+            {
+              "id": "nature/Flower",
+              "kind": "nature",
+              "name": "Flower",
+              "src": "media/tokyo-kyoto-2025/nature/Flower.jpg",
+              "alt": "Flower",
+              "width": 2560,
+              "height": 1922,
+              "cols": 4,
+              "rows": 3,
+              "title": "",
+              "caption": "",
+              "favorite": false
+            },
+            {
+              "id": "nature/Marsh",
+              "kind": "nature",
+              "name": "Marsh",
+              "src": "media/tokyo-kyoto-2025/nature/Marsh.jpg",
+              "alt": "Marsh",
+              "width": 1923,
+              "height": 2560,
+              "cols": 3,
+              "rows": 4,
+              "title": "",
+              "caption": "",
+              "favorite": false
+            }
+          ]
+        },
+        {
+          "id": "colors",
+          "label": "Colors",
+          "photos": [
+            {
+              "id": "colors/KIRIN",
+              "kind": "colors",
+              "name": "KIRIN",
+              "src": "media/tokyo-kyoto-2025/colors/KIRIN.jpg",
+              "alt": "KIRIN",
+              "width": 1536,
+              "height": 2046,
+              "cols": 3,
+              "rows": 4,
+              "title": "",
+              "caption": "",
+              "favorite": false
+            },
+            {
+              "id": "colors/Truck",
+              "kind": "colors",
+              "name": "Truck",
+              "src": "media/tokyo-kyoto-2025/colors/Truck.jpg",
+              "alt": "Truck",
+              "width": 2046,
+              "height": 1536,
+              "cols": 4,
+              "rows": 3,
+              "title": "",
+              "caption": "",
+              "favorite": false
+            },
+            {
+              "id": "colors/Yearning",
+              "kind": "colors",
+              "name": "Yearning",
+              "src": "media/tokyo-kyoto-2025/colors/Yearning.jpg",
+              "alt": "Yearning",
+              "width": 768,
+              "height": 1024,
+              "cols": 3,
+              "rows": 4,
+              "title": "",
+              "caption": "",
+              "favorite": false
+            }
+          ]
+        },
+        {
+          "id": "random",
+          "label": "Random",
+          "photos": [
+            {
+              "id": "random/Smokin-and-Drinkin",
+              "kind": "random",
+              "name": "Smokin-and-Drinkin",
+              "src": "media/tokyo-kyoto-2025/random/Smokin-and-Drinkin.jpg",
+              "alt": "Smokin and Drinkin",
+              "width": 768,
+              "height": 1024,
+              "cols": 3,
+              "rows": 4,
+              "title": "",
+              "caption": "",
+              "favorite": false
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -20,10 +20,10 @@
  * Incremental: a photo is re-derived only when the original is newer than the
  * output, or when the settings that produced it changed.
  */
-import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, rmdir, stat, writeFile } from "node:fs/promises";
 import { dirname, extname, join, relative, resolve } from "node:path";
 import sharp from "sharp";
-import type { SiteConfig } from "../src/types.ts";
+import { loadGalleries, loadSite } from "./galleries.ts";
 
 const APP = import.meta.dirname ? resolve(import.meta.dirname, "..") : process.cwd();
 
@@ -47,6 +47,26 @@ async function walk(dir: string): Promise<string[]> {
   return found.sort();
 }
 
+/**
+ * Remove sub-directories left empty by pruning, depth-first, so a category
+ * folder goes when its last photo does. The gallery's own folder is never
+ * removed -- the caller ignores the return value, and the stamp file lives in
+ * it anyway. Returns whether `dir` ended up empty.
+ */
+async function pruneEmptyDirs(dir: string): Promise<boolean> {
+  let remaining = 0;
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      const full = join(dir, entry.name);
+      if (await pruneEmptyDirs(full)) await rmdir(full).catch(() => {});
+      else remaining++;
+    } else {
+      remaining++;
+    }
+  }
+  return remaining === 0;
+}
+
 async function readStamp(path: string): Promise<Stamp | null> {
   try {
     return JSON.parse(await readFile(path, "utf8")) as Stamp;
@@ -58,13 +78,12 @@ async function readStamp(path: string): Promise<Stamp | null> {
 const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
 async function main() {
-  const site = JSON.parse(
-    await readFile(join(APP, "site.config.json"), "utf8"),
-  ) as SiteConfig;
+  const site = loadSite(APP);
+  const specs = loadGalleries(APP, site);
   const { maxEdge, quality } = site.derive;
   const force = process.argv.includes("--force");
 
-  for (const spec of site.galleries) {
+  for (const spec of specs) {
     const rawDir = resolve(APP, spec.raw);
     const outDir = resolve(APP, spec.media);
 
@@ -149,6 +168,26 @@ async function main() {
       outBytes += result.size;
     }
 
+    // media/ is a function of raw_media/, not an accumulation. Without this a
+    // renamed or deleted original leaves its derived file behind, and the
+    // gallery goes on showing it -- a rename would surface as a duplicate.
+    let pruned = 0;
+    if (Object.keys(sources).length) {
+      const wanted = new Set(
+        Object.keys(sources).map((rel) => rel.replace(/\.[^.]+$/, OUT_EXT)),
+      );
+      for (const file of await walk(outDir).catch(() => [])) {
+        if (wanted.has(relative(outDir, file))) continue;
+        await rm(file);
+        pruned++;
+      }
+      if (pruned) await pruneEmptyDirs(outDir);
+    } else {
+      // An empty originals folder is far more likely a mistake than an
+      // instruction to delete every derived photo.
+      console.warn(`  no source images in ${spec.raw} — leaving ${spec.media} alone`);
+    }
+
     await writeFile(
       stampPath,
       JSON.stringify({ maxEdge, quality, sources } satisfies Stamp, null, 2) + "\n",
@@ -156,7 +195,8 @@ async function main() {
 
     const saved = rawBytes ? (1 - outBytes / rawBytes) * 100 : 0;
     console.log(
-      `  ${written} written (${resized} scaled down), ${skipped} already current`,
+      `  ${written} written (${resized} scaled down), ${skipped} already current` +
+        (pruned ? `, ${pruned} pruned` : ""),
     );
     console.log(
       `  ${mb(rawBytes)} -> ${mb(outBytes)}  (${saved.toFixed(0)}% smaller)`,

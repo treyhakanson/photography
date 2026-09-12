@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { validate } from "../../plugins/index.ts";
 
 const good = {
@@ -18,9 +19,13 @@ describe("config validation (the dev write endpoint's gate)", () => {
     expect(validate({ ...good, theme: "dark" })).toBe("");
   });
 
-  it("accepts the real config.json", () => {
-    const live = JSON.parse(readFileSync("config.json", "utf8"));
-    expect(validate(live)).toBe("");
+  it("accepts every real gallery config", () => {
+    const files = readdirSync("config").filter((f) => f.endsWith(".json"));
+    expect(files.length).toBeGreaterThan(0);
+    for (const file of files) {
+      const live = JSON.parse(readFileSync(join("config", file), "utf8"));
+      expect(validate(live), file).toBe("");
+    }
   });
 
   it("requires captions", () => {
