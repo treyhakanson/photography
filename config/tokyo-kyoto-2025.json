@@ -29,37 +29,91 @@
   ],
   "captions": {
     "colors": {
-      "KIRIN": "",
-      "Truck": "",
-      "Yearning": ""
+      "KIRIN": {
+        "title": "KIRIN",
+        "caption": "In you've ever been to Japan, you'll know that they have an intense love of vending machines. These things are everywhere, even in unexpected places like outside this parking lot off the beaten path in Kamakura."
+      },
+      "Truck": {
+        "title": "Torakku",
+        "caption": "Japan had lots of fun pint-sized vehicles. In particularly, I really enjoyed the trucks and utility vehicles, which felt more like scaled up Hot Wheels than scaled down American vehicles."
+      },
+      "Yearning": {
+        "title": "Psyduck. My Beloved",
+        "caption": "The most expensive thing we did in Japan may have been trying to win this Psyduck plushie. Needless to say, we had to return home without it."
+      }
     },
     "elem": {
-      "Flute-Pimp": "",
-      "Fresh-County": "",
-      "Spooky-Grate": "",
-      "Tokyo-Hotel": "",
-      "Windows": ""
+      "Flute-Pimp": {
+        "title": "Riding the Ox Home",
+        "caption": "Spotted in a small garden in Arashiyama, I believe this is a reference to one of the stages on the path to spiritual enlightenment. If this guy doesn't scream effortless peace, I don't know what does."
+      },
+      "Fresh-County": {
+        "title": "Fresh County",
+        "caption": "As far as I could tell this was a sign for a local Kamakura [streetwear brand](https://freshcounty-kamakura.stores.jp/) called Fresh County, not a fruit supplier like I originally though 😅."
+      },
+      "Spooky-Grate": {
+        "title": "Windows[1]",
+        "caption": "A close up of a building's window in [Shinjuku Gyoen](https://fng.or.jp/shinjuku/)."
+      },
+      "Tokyo-Hotel": {
+        "title": "Hoshinoya Tokyo",
+        "caption": "Staying at the [Hoshinoya](https://hoshinoresorts.com/en/hotels/hoshinoyatokyo/) in Tokyo was the best hotel experience I've ever had. The hotel was beautiful, the common spaces had free snacks and a cute daily activity, there was an onsite onsen (the only natural one in Tokyo!), and the staff was incredible. I can't recommend it enough, and have been dreaming of coming back since the day I left."
+      },
+      "Windows": {
+        "title": "Windows [2]",
+        "caption": "Windows of a building in [Shinjuku Gyoen](https://fng.or.jp/shinjuku/)."
+      }
     },
     "nature": {
       "Big-Stepper": {
+        "title": "Big Stepper",
+        "caption": "A man (icon?) walking across [Shinjuku Gyoen](https://fng.or.jp/shinjuku/) in Tokyo.",
         "favorite": true
       },
-      "Flower": "",
-      "Marsh": ""
+      "Flower": {
+        "title": "Pink Flower",
+        "caption": "A pink flower outside one of the cloisters at the [Tenryu-ji](https://www.tenryuji.com/en/) temple in Arashiyama."
+      },
+      "Marsh": {
+        "title": "Summer Lotus",
+        "caption": "The Genji-ike pond at [Tsurugaoka Hachimangū](https://en.wikipedia.org/wiki/Tsurugaoka_Hachimangū), densely packed with lotus leaves at their summer peak."
+      }
     },
     "random": {
-      "Smokin-and-Drinkin": ""
+      "Smokin-and-Drinkin": {
+        "title": "Smokin' & Drinkin'",
+        "caption": "I'm not sure way, but I found this sign outside an izakaya near Shibuya(?) absolutely historical. So simple, yet profound."
+      }
     },
     "temple": {
       "Kamakura-Daibutsu": {
+        "title": "Kamakura Daibutsu [1]",
+        "caption": "Kamakura Daibutsu (The Great Buddha of Karamkura) at [Kōtoku-in](https://en.wikipedia.org/wiki/K%C5%8Dtoku-in). I'd highly recommend making the day trip down to Kamakura from Tokyo; its a nice break from the hustle and bustle of the city.",
         "favorite": true
       },
-      "Kamakura-Daibutsu--Zoomed": "",
-      "Rain-Temple": "",
-      "Rain-Temple--Zoomed": "",
-      "Spirit-Cat": "",
-      "Temple-Gate": "",
+      "Kamakura-Daibutsu--Zoomed": {
+        "title": "Kamakura Daibutsu [2]",
+        "caption": "Kamakura Daibutsu (The Great Buddha of Karamkura) at [Kōtoku-in](https://en.wikipedia.org/wiki/K%C5%8Dtoku-in). I'd highly recommend making the day trip down to Kamakura from Tokyo; its a nice break from the hustle and bustle of the city."
+      },
+      "Rain-Temple": {
+        "title": "Sensō-ji Temple [1]",
+        "caption": "One of the temples in [Sensō-ji](https://en.wikipedia.org/wiki/Sensō-ji). It was raining that day, which helped to thing the crowds and make for some more interesting shots."
+      },
+      "Rain-Temple--Zoomed": {
+        "title": "Sensō-ji Temple [2]",
+        "caption": "One of the temples in [Sensō-ji](https://en.wikipedia.org/wiki/Sensō-ji). It was raining that day, which helped to thing the crowds and make for some more interesting shots."
+      },
+      "Spirit-Cat": {
+        "title": "Neko",
+        "caption": "[Fushimi Inari](https://en.wikipedia.org/wiki/Fushimi_Inari-taisha) is pretty polarizing if you look it up online, but I'd say it was well worth the time. I went in the evening, so it was much less busy and distinctly spookier (in a good way). Also, the shrine's many stray cats like to hide during the heat of the day, so you'll have a much better chance of spotting them later in the day."
+      },
+      "Temple-Gate": {
+        "title": "Tenryu-ji Gate",
+        "caption": "One of the gates on the grounds of the [Tenryu-ji](https://www.tenryuji.com/en/) temple in Arashiyama."
+      },
       "Tiny-Torii": {
+        "title": "Tiny Torii",
+        "caption": "A tiny Torii spotted amongst the larger Torii at Fushimi Inari.",
         "favorite": true
       }
     }
