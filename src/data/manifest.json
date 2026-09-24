@@ -7,6 +7,277 @@
   },
   "galleries": [
     {
+      "slug": "yosemite-2026",
+      "title": "Yosemite 2026",
+      "updated": "2026-09-23",
+      "photoCount": 13,
+      "categoryCount": 3,
+      "cover": {
+        "id": "other/blood-moon",
+        "kind": "other",
+        "name": "blood-moon",
+        "src": "media/yosemite-2026/other/blood-moon.jpg",
+        "alt": "blood moon",
+        "width": 2560,
+        "height": 1440,
+        "cols": 5,
+        "rows": 3,
+        "title": "Blood Moon",
+        "caption": "\"Link... Be on your guard. Ganon's power grows...it rises to its peak under the hour of the [blood moon](https://zelda.fandom.com/wiki/Blood_Moon). By its glow, the aimless spirits of monsters that were slain in the name of the light return to flesh. Link...please be careful.\"",
+        "favorite": true
+      },
+      "sections": [
+        {
+          "id": "favorites",
+          "label": "Favorites",
+          "photos": [
+            {
+              "id": "other/blood-moon",
+              "kind": "other",
+              "name": "blood-moon",
+              "src": "media/yosemite-2026/other/blood-moon.jpg",
+              "alt": "blood moon",
+              "width": 2560,
+              "height": 1440,
+              "cols": 5,
+              "rows": 3,
+              "title": "Blood Moon",
+              "caption": "\"Link... Be on your guard. Ganon's power grows...it rises to its peak under the hour of the [blood moon](https://zelda.fandom.com/wiki/Blood_Moon). By its glow, the aimless spirits of monsters that were slain in the name of the light return to flesh. Link...please be careful.\"",
+              "favorite": true
+            },
+            {
+              "id": "rocks/fishin",
+              "kind": "rocks",
+              "name": "fishin",
+              "src": "media/yosemite-2026/rocks/fishin.jpg",
+              "alt": "fishin",
+              "width": 1440,
+              "height": 2560,
+              "cols": 3,
+              "rows": 5,
+              "title": "Gone Fishin'",
+              "caption": "Couldn't have asked for a better backdrop for my first foray into fly fishing. Allegedly the Merced river is a pretty good spot this time of year (for brown and rainbow trout), but we didn't have much luck. We did see some small fish further upstream later the next day, though.",
+              "favorite": true
+            },
+            {
+              "id": "other/radagast",
+              "kind": "other",
+              "name": "radagast",
+              "src": "media/yosemite-2026/other/radagast.jpg",
+              "alt": "radagast",
+              "width": 1536,
+              "height": 2046,
+              "cols": 3,
+              "rows": 4,
+              "title": "Radagast",
+              "caption": "We did almost 30 miles in 2.5 days, with about 5000 ft of elevation gain. For me, that meant clutching to a walking stick for dear life basically the entire time, especially on the steep downhills. Each hike was well worth the effort though, and the only thing I'd change is remembering to bring both my braces instead of just one.",
+              "favorite": true
+            }
+          ]
+        },
+        {
+          "id": "rocks",
+          "label": "Rocks",
+          "photos": [
+            {
+              "id": "rocks/fishin",
+              "kind": "rocks",
+              "name": "fishin",
+              "src": "media/yosemite-2026/rocks/fishin.jpg",
+              "alt": "fishin",
+              "width": 1440,
+              "height": 2560,
+              "cols": 3,
+              "rows": 5,
+              "title": "Gone Fishin'",
+              "caption": "Couldn't have asked for a better backdrop for my first foray into fly fishing. Allegedly the Merced river is a pretty good spot this time of year (for brown and rainbow trout), but we didn't have much luck. We did see some small fish further upstream later the next day, though.",
+              "favorite": true
+            },
+            {
+              "id": "rocks/cap",
+              "kind": "rocks",
+              "name": "cap",
+              "src": "media/yosemite-2026/rocks/cap.jpg",
+              "alt": "cap",
+              "width": 2560,
+              "height": 1440,
+              "cols": 5,
+              "rows": 3,
+              "title": "The Captain",
+              "caption": "El Capitan, seen from Merced river early in the morning. There really isn't a bad vantage point of it in the entire park.",
+              "favorite": false
+            },
+            {
+              "id": "rocks/smoky-1",
+              "kind": "rocks",
+              "name": "smoky-1",
+              "src": "media/yosemite-2026/rocks/smoky-1.jpg",
+              "alt": "smoky 1",
+              "width": 1182,
+              "height": 665,
+              "cols": 5,
+              "rows": 3,
+              "title": "Smoky [1]",
+              "caption": "Here you can really see the effects of the nearby forest fire. This was taken along the way up to Stanford Point, which in the words of a hiker we passed by \"is complete ass the entire way\".",
+              "favorite": false
+            },
+            {
+              "id": "rocks/merced",
+              "kind": "rocks",
+              "name": "merced",
+              "src": "media/yosemite-2026/rocks/merced.jpg",
+              "alt": "merced",
+              "width": 1440,
+              "height": 2560,
+              "cols": 3,
+              "rows": 5,
+              "title": "Elephant Rock",
+              "caption": "At least I think this is Elephant Rock. Taken from Merced river.",
+              "favorite": false
+            },
+            {
+              "id": "rocks/twilight",
+              "kind": "rocks",
+              "name": "twilight",
+              "src": "media/yosemite-2026/rocks/twilight.jpg",
+              "alt": "twilight",
+              "width": 1920,
+              "height": 2560,
+              "cols": 3,
+              "rows": 4,
+              "title": "El Cap",
+              "caption": "Taken just before the sunset, from Merced river near the mist trailhead.",
+              "favorite": false
+            },
+            {
+              "id": "rocks/rapture",
+              "kind": "rocks",
+              "name": "rapture",
+              "src": "media/yosemite-2026/rocks/rapture.jpg",
+              "alt": "rapture",
+              "width": 1440,
+              "height": 2560,
+              "cols": 3,
+              "rows": 5,
+              "title": "Rapture",
+              "caption": "A fire had started shortly before we arrived, so the valley was quite hazy, especially early in the day. This created some cool lighting effects though, especially around sunrise and sunset.",
+              "favorite": false
+            },
+            {
+              "id": "rocks/smoky-2",
+              "kind": "rocks",
+              "name": "smoky-2",
+              "src": "media/yosemite-2026/rocks/smoky-2.jpg",
+              "alt": "smoky 2",
+              "width": 2560,
+              "height": 1440,
+              "cols": 5,
+              "rows": 3,
+              "title": "Smoky [2]",
+              "caption": "Another shot of the smoky scenery, this time from the top of Stanford Point.",
+              "favorite": false
+            }
+          ]
+        },
+        {
+          "id": "water",
+          "label": "Water",
+          "photos": [
+            {
+              "id": "water/nevada",
+              "kind": "water",
+              "name": "nevada",
+              "src": "media/yosemite-2026/water/nevada.jpg",
+              "alt": "nevada",
+              "width": 1440,
+              "height": 2560,
+              "cols": 3,
+              "rows": 5,
+              "title": "Nevada Falls",
+              "caption": "Taken along the main ascending path to the top of the falls. Absolutely brutal trail for my knees, but I made it in one piece.",
+              "favorite": false
+            },
+            {
+              "id": "water/vernal--zoomed",
+              "kind": "water",
+              "name": "vernal--zoomed",
+              "src": "media/yosemite-2026/water/vernal--zoomed.jpg",
+              "alt": "vernal  zoomed",
+              "width": 1440,
+              "height": 2560,
+              "cols": 3,
+              "rows": 5,
+              "title": "Vernal Falls [2]",
+              "caption": "Vernal falls, but closer.",
+              "favorite": false
+            },
+            {
+              "id": "water/vernal",
+              "kind": "water",
+              "name": "vernal",
+              "src": "media/yosemite-2026/water/vernal.jpg",
+              "alt": "vernal",
+              "width": 1440,
+              "height": 2560,
+              "cols": 3,
+              "rows": 5,
+              "title": "Vernal Falls [1]",
+              "caption": "Vernal falls; absolutely stunning in person. One of the few falls in the park (along with Nevada) that are not driven by snowmelt, and flow year round.",
+              "favorite": false
+            }
+          ]
+        },
+        {
+          "id": "other",
+          "label": "Other",
+          "photos": [
+            {
+              "id": "other/blood-moon",
+              "kind": "other",
+              "name": "blood-moon",
+              "src": "media/yosemite-2026/other/blood-moon.jpg",
+              "alt": "blood moon",
+              "width": 2560,
+              "height": 1440,
+              "cols": 5,
+              "rows": 3,
+              "title": "Blood Moon",
+              "caption": "\"Link... Be on your guard. Ganon's power grows...it rises to its peak under the hour of the [blood moon](https://zelda.fandom.com/wiki/Blood_Moon). By its glow, the aimless spirits of monsters that were slain in the name of the light return to flesh. Link...please be careful.\"",
+              "favorite": true
+            },
+            {
+              "id": "other/radagast",
+              "kind": "other",
+              "name": "radagast",
+              "src": "media/yosemite-2026/other/radagast.jpg",
+              "alt": "radagast",
+              "width": 1536,
+              "height": 2046,
+              "cols": 3,
+              "rows": 4,
+              "title": "Radagast",
+              "caption": "We did almost 30 miles in 2.5 days, with about 5000 ft of elevation gain. For me, that meant clutching to a walking stick for dear life basically the entire time, especially on the steep downhills. Each hike was well worth the effort though, and the only thing I'd change is remembering to bring both my braces instead of just one.",
+              "favorite": true
+            },
+            {
+              "id": "other/fat-critter",
+              "kind": "other",
+              "name": "fat-critter",
+              "src": "media/yosemite-2026/other/fat-critter.jpg",
+              "alt": "fat critter",
+              "width": 2560,
+              "height": 1922,
+              "cols": 4,
+              "rows": 3,
+              "title": "Fat Critter",
+              "caption": "Possibly a yellow-bellied marmot? It was far too fat to be a ground squirrel, and it didn't have a busy tail",
+              "favorite": false
+            }
+          ]
+        }
+      ]
+    },
+    {
       "slug": "edinburgh-london-2026",
       "title": "Edinburgh & London 2026",
       "updated": "2026-09-07",
@@ -556,7 +827,7 @@
               "cols": 3,
               "rows": 3,
               "title": "Westminster Abbey Dragon",
-              "caption": "Likely depicts the dragon St. George is fabled to have slain.",
+              "caption": "A dragon near Westminster Abbey's North Door. Where's [St. George](https://en.wikipedia.org/wiki/Saint_George#St._George_and_the_Dragon) when you need him?",
               "favorite": false
             },
             {
@@ -913,8 +1184,8 @@
         "height": 2560,
         "cols": 3,
         "rows": 4,
-        "title": "",
-        "caption": "",
+        "title": "Kamakura Daibutsu [1]",
+        "caption": "Kamakura Daibutsu (The Great Buddha of Karamkura) at [Kōtoku-in](https://en.wikipedia.org/wiki/K%C5%8Dtoku-in). I'd highly recommend making the day trip down to Kamakura from Tokyo; its a nice break from the hustle and bustle of the city.",
         "favorite": true
       },
       "sections": [
@@ -932,8 +1203,8 @@
               "height": 2560,
               "cols": 3,
               "rows": 4,
-              "title": "",
-              "caption": "",
+              "title": "Big Stepper",
+              "caption": "A man (icon?) walking across [Shinjuku Gyoen](https://fng.or.jp/shinjuku/) in Tokyo.",
               "favorite": true
             },
             {
@@ -946,8 +1217,8 @@
               "height": 2560,
               "cols": 3,
               "rows": 4,
-              "title": "",
-              "caption": "",
+              "title": "Kamakura Daibutsu [1]",
+              "caption": "Kamakura Daibutsu (The Great Buddha of Karamkura) at [Kōtoku-in](https://en.wikipedia.org/wiki/K%C5%8Dtoku-in). I'd highly recommend making the day trip down to Kamakura from Tokyo; its a nice break from the hustle and bustle of the city.",
               "favorite": true
             },
             {
@@ -960,8 +1231,8 @@
               "height": 1922,
               "cols": 4,
               "rows": 3,
-              "title": "",
-              "caption": "",
+              "title": "Tiny Torii",
+              "caption": "A tiny Torii spotted amongst the larger Torii at Fushimi Inari.",
               "favorite": true
             }
           ]
@@ -980,8 +1251,8 @@
               "height": 1922,
               "cols": 4,
               "rows": 3,
-              "title": "",
-              "caption": "",
+              "title": "Kamakura Daibutsu [2]",
+              "caption": "Kamakura Daibutsu (The Great Buddha of Karamkura) at [Kōtoku-in](https://en.wikipedia.org/wiki/K%C5%8Dtoku-in). I'd highly recommend making the day trip down to Kamakura from Tokyo; its a nice break from the hustle and bustle of the city.",
               "favorite": false
             },
             {
@@ -994,8 +1265,8 @@
               "height": 660,
               "cols": 5,
               "rows": 3,
-              "title": "",
-              "caption": "",
+              "title": "Sensō-ji Temple [2]",
+              "caption": "One of the temples in [Sensō-ji](https://en.wikipedia.org/wiki/Sensō-ji). It was raining that day, which helped to thing the crowds and make for some more interesting shots.",
               "favorite": false
             },
             {
@@ -1008,8 +1279,8 @@
               "height": 2560,
               "cols": 3,
               "rows": 4,
-              "title": "",
-              "caption": "",
+              "title": "Kamakura Daibutsu [1]",
+              "caption": "Kamakura Daibutsu (The Great Buddha of Karamkura) at [Kōtoku-in](https://en.wikipedia.org/wiki/K%C5%8Dtoku-in). I'd highly recommend making the day trip down to Kamakura from Tokyo; its a nice break from the hustle and bustle of the city.",
               "favorite": true
             },
             {
@@ -1022,8 +1293,8 @@
               "height": 665,
               "cols": 5,
               "rows": 3,
-              "title": "",
-              "caption": "",
+              "title": "Sensō-ji Temple [1]",
+              "caption": "One of the temples in [Sensō-ji](https://en.wikipedia.org/wiki/Sensō-ji). It was raining that day, which helped to thing the crowds and make for some more interesting shots.",
               "favorite": false
             },
             {
@@ -1036,8 +1307,8 @@
               "height": 1922,
               "cols": 4,
               "rows": 3,
-              "title": "",
-              "caption": "",
+              "title": "Tenryu-ji Gate",
+              "caption": "One of the gates on the grounds of the [Tenryu-ji](https://www.tenryuji.com/en/) temple in Arashiyama.",
               "favorite": false
             },
             {
@@ -1050,8 +1321,8 @@
               "height": 2560,
               "cols": 3,
               "rows": 4,
-              "title": "",
-              "caption": "",
+              "title": "Neko",
+              "caption": "[Fushimi Inari](https://en.wikipedia.org/wiki/Fushimi_Inari-taisha) is pretty polarizing if you look it up online, but I'd say it was well worth the time. I went in the evening, so it was much less busy and distinctly spookier (in a good way). Also, the shrine's many stray cats like to hide during the heat of the day, so you'll have a much better chance of spotting them later in the day.",
               "favorite": false
             },
             {
@@ -1064,8 +1335,8 @@
               "height": 1922,
               "cols": 4,
               "rows": 3,
-              "title": "",
-              "caption": "",
+              "title": "Tiny Torii",
+              "caption": "A tiny Torii spotted amongst the larger Torii at Fushimi Inari.",
               "favorite": true
             }
           ]
@@ -1084,8 +1355,8 @@
               "height": 2560,
               "cols": 3,
               "rows": 4,
-              "title": "",
-              "caption": "",
+              "title": "Riding the Ox Home",
+              "caption": "Spotted in a small garden in Arashiyama, I believe this is a reference to one of the stages on the path to spiritual enlightenment. If this guy doesn't scream effortless peace, I don't know what does.",
               "favorite": false
             },
             {
@@ -1098,8 +1369,8 @@
               "height": 2560,
               "cols": 3,
               "rows": 4,
-              "title": "",
-              "caption": "",
+              "title": "Fresh County",
+              "caption": "As far as I could tell this was a sign for a local Kamakura [streetwear brand](https://freshcounty-kamakura.stores.jp/) called Fresh County, not a fruit supplier like I originally though 😅.",
               "favorite": false
             },
             {
@@ -1112,8 +1383,8 @@
               "height": 886,
               "cols": 3,
               "rows": 3,
-              "title": "",
-              "caption": "",
+              "title": "Windows[1]",
+              "caption": "A close up of a building's window in [Shinjuku Gyoen](https://fng.or.jp/shinjuku/).",
               "favorite": false
             },
             {
@@ -1126,8 +1397,8 @@
               "height": 2560,
               "cols": 3,
               "rows": 4,
-              "title": "",
-              "caption": "",
+              "title": "Hoshinoya Tokyo",
+              "caption": "Staying at the [Hoshinoya](https://hoshinoresorts.com/en/hotels/hoshinoyatokyo/) in Tokyo was the best hotel experience I've ever had. The hotel was beautiful, the common spaces had free snacks and a cute daily activity, there was an onsite onsen (the only natural one in Tokyo!), and the staff was incredible. I can't recommend it enough, and have been dreaming of coming back since the day I left.",
               "favorite": false
             },
             {
@@ -1140,8 +1411,8 @@
               "height": 1922,
               "cols": 4,
               "rows": 3,
-              "title": "",
-              "caption": "",
+              "title": "Windows [2]",
+              "caption": "Windows of a building in [Shinjuku Gyoen](https://fng.or.jp/shinjuku/).",
               "favorite": false
             }
           ]
@@ -1160,8 +1431,8 @@
               "height": 2560,
               "cols": 3,
               "rows": 4,
-              "title": "",
-              "caption": "",
+              "title": "Big Stepper",
+              "caption": "A man (icon?) walking across [Shinjuku Gyoen](https://fng.or.jp/shinjuku/) in Tokyo.",
               "favorite": true
             },
             {
@@ -1174,8 +1445,8 @@
               "height": 1922,
               "cols": 4,
               "rows": 3,
-              "title": "",
-              "caption": "",
+              "title": "Pink Flower",
+              "caption": "A pink flower outside one of the cloisters at the [Tenryu-ji](https://www.tenryuji.com/en/) temple in Arashiyama.",
               "favorite": false
             },
             {
@@ -1188,8 +1459,8 @@
               "height": 2560,
               "cols": 3,
               "rows": 4,
-              "title": "",
-              "caption": "",
+              "title": "Summer Lotus",
+              "caption": "The Genji-ike pond at [Tsurugaoka Hachimangū](https://en.wikipedia.org/wiki/Tsurugaoka_Hachimangū), densely packed with lotus leaves at their summer peak.",
               "favorite": false
             }
           ]
@@ -1208,8 +1479,8 @@
               "height": 2046,
               "cols": 3,
               "rows": 4,
-              "title": "",
-              "caption": "",
+              "title": "KIRIN",
+              "caption": "In you've ever been to Japan, you'll know that they have an intense love of vending machines. These things are everywhere, even in unexpected places like outside this parking lot off the beaten path in Kamakura.",
               "favorite": false
             },
             {
@@ -1222,8 +1493,8 @@
               "height": 1536,
               "cols": 4,
               "rows": 3,
-              "title": "",
-              "caption": "",
+              "title": "Torakku",
+              "caption": "Japan had lots of fun pint-sized vehicles. In particularly, I really enjoyed the trucks and utility vehicles, which felt more like scaled up Hot Wheels than scaled down American vehicles.",
               "favorite": false
             },
             {
@@ -1236,8 +1507,8 @@
               "height": 1024,
               "cols": 3,
               "rows": 4,
-              "title": "",
-              "caption": "",
+              "title": "Psyduck. My Beloved",
+              "caption": "The most expensive thing we did in Japan may have been trying to win this Psyduck plushie. Needless to say, we had to return home without it.",
               "favorite": false
             }
           ]
@@ -1256,8 +1527,8 @@
               "height": 1024,
               "cols": 3,
               "rows": 4,
-              "title": "",
-              "caption": "",
+              "title": "Smokin' & Drinkin'",
+              "caption": "I'm not sure way, but I found this sign outside an izakaya near Shibuya(?) absolutely historical. So simple, yet profound.",
               "favorite": false
             }
           ]

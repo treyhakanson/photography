@@ -1,0 +1,88 @@
+{
+  "title": "Yosemite 2026",
+  "date": "2026-09",
+  "raw": "./raw_media/yos-2026",
+  "media": "./media/yos-2026",
+  "cover": "other/blood-moon",
+  "sections": [
+    {
+      "id": "favorites",
+      "label": "Favorites"
+    },
+    {
+      "id": "rocks",
+      "label": "Rocks"
+    },
+    {
+      "id": "water",
+      "label": "Water"
+    },
+    {
+      "id": "other",
+      "label": "Other"
+    }
+  ],
+  "captions": {
+    "other": {
+      "blood-moon": {
+        "title": "Blood Moon",
+        "caption": "\"Link... Be on your guard. Ganon's power grows...it rises to its peak under the hour of the [blood moon](https://zelda.fandom.com/wiki/Blood_Moon). By its glow, the aimless spirits of monsters that were slain in the name of the light return to flesh. Link...please be careful.\"",
+        "favorite": true
+      },
+      "fat-critter": {
+        "title": "Fat Critter",
+        "caption": "Possibly a yellow-bellied marmot? It was far too fat to be a ground squirrel, and it didn't have a bushy tail."
+      },
+      "radagast": {
+        "title": "Radagast",
+        "caption": "We did almost 30 miles in 2.5 days, with about 5000 ft of elevation gain. For me, that meant clutching to a walking stick for dear life basically the entire time, especially on the steep downhills. Each hike was well worth the effort though, and the only thing I'd change is remembering to bring both my braces instead of just one.",
+        "favorite": true
+      }
+    },
+    "rocks": {
+      "cap": {
+        "title": "The Captain",
+        "caption": "El Capitan, seen from Merced river early in the morning. There really isn't a bad vantage point of it in the entire park."
+      },
+      "fishin": {
+        "title": "Gone Fishin'",
+        "caption": "Couldn't have asked for a better backdrop for my first foray into fly fishing. Allegedly the Merced river is a pretty good spot this time of year (for brown and rainbow trout), but we didn't have much luck. We did see some small fish further upstream later the next day, though.",
+        "favorite": true
+      },
+      "merced": {
+        "title": "Elephant Rock",
+        "caption": "At least I think this is Elephant Rock. Taken from Merced river."
+      },
+      "rapture": {
+        "title": "Rapture",
+        "caption": "A fire had started shortly before we arrived, so the valley was quite hazy, especially early in the day. This created some cool lighting effects though, especially around sunrise and sunset."
+      },
+      "smoky-1": {
+        "title": "Smoky [1]",
+        "caption": "Here you can really see the effects of the nearby forest fire. This was taken along the way up to Stanford Point, which in the words of a hiker we passed by \"is complete ass the entire way\"."
+      },
+      "smoky-2": {
+        "title": "Smoky [2]",
+        "caption": "Another shot of the smoky scenery, this time from the top of Stanford Point."
+      },
+      "twilight": {
+        "title": "El Cap",
+        "caption": "Taken just before the sunset, from Merced river near the mist trailhead."
+      }
+    },
+    "water": {
+      "nevada": {
+        "title": "Nevada Falls",
+        "caption": "Taken along the main ascending path to the top of the falls. Absolutely brutal trail for my knees, but I made it in one piece."
+      },
+      "vernal": {
+        "title": "Vernal Falls [1]",
+        "caption": "Vernal falls; absolutely stunning in person. One of the few falls in the park (along with Nevada) that are not driven by snowmelt, and flow year round."
+      },
+      "vernal--zoomed": {
+        "title": "Vernal Falls [2]",
+        "caption": "Vernal falls, but closer."
+      }
+    }
+  }
+}

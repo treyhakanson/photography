@@ -6,10 +6,27 @@ import { galleries, manifest } from "../lib/manifest.ts";
 import { finishAnimations, installAnimate } from "./setup.ts";
 import type { Photo } from "../types.ts";
 
-const gallery = galleries[0];
 const FAVORITES = "favorites";
 
-function show(slug = gallery.slug) {
+/**
+ * Pick a gallery by the property under test rather than by index. Pinning to
+ * galleries[0] breaks the moment a newer gallery sorts to the front of the
+ * index, or the moment the front one is not yet captioned.
+ */
+const hasFavorites = galleries.find((g) => g.sections.some((s) => s.id === FAVORITES));
+const hasCaptions = galleries.find((g) =>
+  g.sections.some((s) => s.id !== FAVORITES && s.photos.some((p) => p.caption)),
+);
+
+describe("test fixtures", () => {
+  it("has a gallery with favorites, and one with captions", () => {
+    // Guards every assertion below from passing vacuously.
+    expect(hasFavorites).toBeDefined();
+    expect(hasCaptions).toBeDefined();
+  });
+});
+
+function show(slug: string) {
   return render(
     <MemoryRouter initialEntries={[`/${slug}`]}>
       <Routes>
@@ -31,7 +48,8 @@ const open = async (photo: Photo, sectionId: string) => {
 };
 
 describe("gallery structure", () => {
-  beforeEach(() => show());
+  const gallery = hasFavorites!;
+  beforeEach(() => show(gallery.slug));
 
   it("renders one section per category, plus favorites", () => {
     expect(document.querySelectorAll(".Section")).toHaveLength(gallery.sections.length);
@@ -109,11 +127,12 @@ describe("gallery structure", () => {
 });
 
 describe("lightbox", () => {
+  const gallery = hasCaptions!;
   const captioned = gallery.sections
     .find((s) => s.id !== FAVORITES)!
     .photos.find((p) => p.caption)!;
 
-  beforeEach(() => show());
+  beforeEach(() => show(gallery.slug));
 
   it("starts closed and unlocked", () => {
     expect(document.querySelector(".Lightbox")).toBeNull();
@@ -244,11 +263,12 @@ describe("a photo with no caption yet", () => {
 });
 
 describe("lightbox flight", () => {
+  const gallery = galleries[0];
   const photo = gallery.sections.find((s) => s.id !== FAVORITES)!.photos[0];
 
   beforeEach(() => {
     installAnimate();
-    show();
+    show(gallery.slug);
   });
 
   it("hides the tile while its photo is in flight, and restores it after", async () => {

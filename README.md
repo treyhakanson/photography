@@ -9,7 +9,7 @@ Deploys to GitHub Pages under `/photography`.
 ```sh
 npm install
 npm run dev      # http://localhost:5173/photography/
-npm test         # 115 tests
+npm test         # 116 tests
 npm run build    # -> dist/
 ```
 
@@ -421,7 +421,7 @@ the packing order actually changed.
 
 ## Tests
 
-115 tests, no browser required (jsdom).
+116 tests, no browser required (jsdom).
 
 | File | Covers |
 | --- | --- |
